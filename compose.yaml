@@ -1,0 +1,9 @@
+services:
+  postgres:
+    image: 'postgres:latest'
+    environment:
+      - 'POSTGRES_DB=meetler'
+      - 'POSTGRES_PASSWORD=TestP@ssword2!'
+      - 'POSTGRES_USER=meetler'
+    ports:
+      - "5432:5432"
