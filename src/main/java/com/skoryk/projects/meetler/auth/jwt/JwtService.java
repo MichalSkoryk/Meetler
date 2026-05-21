@@ -28,8 +28,8 @@ public class JwtService {
     return extractClaim(token, Claims::getSubject);
   }
 
-  public String extractEmailPrefix(String token) {
-    return extractClaim(token, claims -> claims.get("emailPrefix", String.class));
+  public String extractName(String token) {
+    return extractClaim(token, claims -> claims.get("name", String.class));
   }
 
   public <T> T extractClaim(String token, Function<Claims, T> resolver) {
@@ -38,12 +38,11 @@ public class JwtService {
     return resolver.apply(claims);
   }
 
-  public String generateToken(UUID userId, String email) {
+  public String generateToken(UUID userId, String name) {
 
-    String emailPrefix = email.substring(0, email.indexOf("@"));
     return Jwts.builder()
         .subject(userId.toString())
-        .claim("emailPrefix", emailPrefix)
+        .claim("name", name)
         .issuedAt(new Date(System.currentTimeMillis()))
         .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24))
         .signWith(getSigningKey(), SignatureAlgorithm.HS256)
@@ -51,13 +50,13 @@ public class JwtService {
   }
 
   public boolean isTokenValid(String token, AppUser userDetails) {
-    final UUID userName = UUID.fromString(getUserIdStr(token));
+    final UUID userId = UUID.fromString(getUserIdStr(token));
 
     if (isTokenExpired(token)) {
       log.warn("Token expired: {}", token);
       return false;
     }
-    return userName.equals(userDetails.getName());
+    return userId.equals(userDetails.getId());
   }
 
   private boolean isTokenExpired(String token) {

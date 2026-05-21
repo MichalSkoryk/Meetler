@@ -7,8 +7,7 @@ CREATE TABLE app_user (
     upgraded_at     TIMESTAMPTZ,
     deleted_at      TIMESTAMPTZ,
     password_hash   TEXT,
-    auth_provider   TEXT NOT NULL CHECK (auth_provider IN ('INTERNAL','GOOGLE','MICROSOFT','MAGIC_LINK')),
-    metadata        JSONB
+    auth_provider   TEXT NOT NULL CHECK (auth_provider IN ('INTERNAL','GOOGLE','MICROSOFT','MAGIC_LINK'))
 );
 
 CREATE TABLE calendar (

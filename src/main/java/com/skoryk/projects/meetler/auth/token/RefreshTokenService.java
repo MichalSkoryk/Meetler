@@ -5,6 +5,7 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -25,6 +26,7 @@ public class RefreshTokenService {
     return token.getToken();
   }
 
+  @Transactional
   public String rotateRefreshToken(AppUser user) {
     // Remove all old tokens for this user
     repo.deleteByUser(user);
@@ -42,14 +44,10 @@ public class RefreshTokenService {
       throw new IllegalArgumentException("Refresh token expired or revoked");
     }
 
-    AppUser user = token.getUser();
-
-    // Rotate token (delete old + create new)
-    rotateRefreshToken(user);
-
-    return user;
+    return token.getUser();
   }
 
+  @Transactional
   public void revoke(String tokenValue) {
     RefreshToken token =
         repo.findByToken(tokenValue)
