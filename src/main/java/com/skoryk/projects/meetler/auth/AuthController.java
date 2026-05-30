@@ -4,10 +4,12 @@ import com.skoryk.projects.meetler.auth.dto.AuthResponse;
 import com.skoryk.projects.meetler.auth.dto.LoginRequest;
 import com.skoryk.projects.meetler.auth.dto.RefreshTokenRequest;
 import com.skoryk.projects.meetler.auth.dto.RegisterRequest;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+@Tag(name = "Authentication")
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor

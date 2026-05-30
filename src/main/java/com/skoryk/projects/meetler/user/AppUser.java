@@ -5,7 +5,6 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.Type;
 import org.hibernate.annotations.UpdateTimestamp;
 
 @Entity
@@ -41,5 +40,4 @@ public class AppUser {
   @Enumerated(EnumType.STRING)
   @Column(nullable = false)
   private AuthProvider authProvider;
-
 }

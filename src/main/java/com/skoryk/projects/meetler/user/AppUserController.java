@@ -3,11 +3,13 @@ package com.skoryk.projects.meetler.user;
 import com.skoryk.projects.meetler.user.dto.CreateUserRequest;
 import com.skoryk.projects.meetler.user.dto.UpdateNameRequest;
 import com.skoryk.projects.meetler.user.dto.UserResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+@Tag(name = "User Management")
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor

@@ -212,6 +212,32 @@ ALTER TABLE refresh_token
 ALTER TABLE refresh_token
     ADD CONSTRAINT FK_REFRESH_TOKEN_ON_USER FOREIGN KEY (user_id) REFERENCES app_user (id);
 
+CREATE TABLE app_group
+(
+    id         UUID                        NOT NULL,
+    name       VARCHAR(255)                NOT NULL,
+    owner_id   UUID                        NOT NULL,
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+    updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+    CONSTRAINT pk_app_group PRIMARY KEY (id)
+);
 
 
+CREATE TABLE group_member (
+                              id UUID PRIMARY KEY,
+                              group_id UUID NOT NULL REFERENCES app_group(id) ON DELETE CASCADE,
+                              user_id UUID NOT NULL REFERENCES app_user(id) ON DELETE CASCADE,
+                              role TEXT NOT NULL, -- MEMBER / ADMIN / OWNER
+                              joined_at TIMESTAMPTZ NOT NULL
+);
+
+CREATE TABLE group_invite (
+                              id UUID PRIMARY KEY,
+                              group_id UUID NOT NULL REFERENCES app_group(id) ON DELETE CASCADE,
+                              code TEXT NOT NULL UNIQUE,
+                              expires_at TIMESTAMPTZ,
+                              max_uses INT,
+                              uses INT NOT NULL DEFAULT 0,
+                              created_at TIMESTAMPTZ NOT NULL
+);
 
