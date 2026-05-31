@@ -216,7 +216,6 @@ CREATE TABLE app_group
 (
     id         UUID                        NOT NULL,
     name       VARCHAR(255)                NOT NULL,
-    owner_id   UUID                        NOT NULL,
     created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,
     updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,
     CONSTRAINT pk_app_group PRIMARY KEY (id)

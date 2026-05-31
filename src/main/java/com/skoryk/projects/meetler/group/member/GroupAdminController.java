@@ -8,6 +8,7 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Groups")
@@ -39,6 +40,10 @@ public class GroupAdminController {
             .findByGroupIdAndUserId(groupId, userId)
             .orElseThrow(() -> new IllegalArgumentException("User not in group"));
 
+    if (member.getRole() != GroupRole.MEMBER) {
+      throw new IllegalArgumentException("Only members can be promoted to admin");
+    }
+
     member.setRole(GroupRole.ADMIN);
     memberRepository.save(member);
 
@@ -64,6 +69,10 @@ public class GroupAdminController {
             .findByGroupIdAndUserId(groupId, userId)
             .orElseThrow(() -> new IllegalArgumentException("User not in group"));
 
+    if (member.getRole() != GroupRole.ADMIN) {
+      throw new IllegalArgumentException("Only admins can be demoted");
+    }
+
     member.setRole(GroupRole.MEMBER);
     memberRepository.save(member);
 
@@ -84,11 +93,25 @@ public class GroupAdminController {
       throw new IllegalArgumentException("Only admins can remove members");
     }
 
-    memberRepository.deleteByGroupIdAndUserId(groupId, userId);
+    GroupMember member =
+        memberRepository
+            .findByGroupIdAndUserId(groupId, userId)
+            .orElseThrow(() -> new IllegalArgumentException("User not in group"));
+
+    if (member.getRole() == GroupRole.OWNER) {
+      throw new IllegalArgumentException("Owner cannot be removed");
+    }
+
+    if (member.getRole() == GroupRole.ADMIN && !permissionService.isOwner(group, requester)) {
+      throw new IllegalArgumentException("Only owner can remove admins");
+    }
+
+    memberRepository.delete(member);
 
     return ResponseEntity.noContent().build();
   }
 
+  @Transactional
   @PostMapping("/transfer/{newOwnerId}")
   public ResponseEntity<Void> transferOwnership(
       @PathVariable UUID groupId,
@@ -103,10 +126,18 @@ public class GroupAdminController {
       throw new IllegalArgumentException("Only owner can transfer ownership");
     }
 
+    if (requester.getId().equals(newOwnerId)) {
+      throw new IllegalArgumentException("New owner must be another group member");
+    }
+
     GroupMember newOwner =
         memberRepository
             .findByGroupIdAndUserId(groupId, newOwnerId)
             .orElseThrow(() -> new IllegalArgumentException("User not in group"));
+
+    if (newOwner.getUser().getDeletedAt() != null) {
+      throw new IllegalArgumentException("New owner account is not active");
+    }
 
     // demote old owner
     GroupMember oldOwner =

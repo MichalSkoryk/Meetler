@@ -45,7 +45,16 @@ public class GroupMemberService {
             .findById(groupId)
             .orElseThrow(() -> new IllegalArgumentException("Group not found"));
 
-    memberRepository.deleteByGroupIdAndUserId(groupId, user.getId());
+    GroupMember member =
+        memberRepository
+            .findByGroupAndUser(group, user)
+            .orElseThrow(() -> new IllegalArgumentException("User not in group"));
+
+    if (member.getRole() == GroupRole.OWNER) {
+      throw new IllegalArgumentException("Owner must transfer ownership before leaving");
+    }
+
+    memberRepository.delete(member);
   }
 
   public List<GroupMember> getGroupMembers(UUID groupId) {

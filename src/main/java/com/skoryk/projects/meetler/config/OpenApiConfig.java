@@ -29,7 +29,8 @@ public class OpenApiConfig {
                 new Tag().name("User Management").description("Application user management"),
                 new Tag().name("Groups").description("Group management"),
                 new Tag().name("Group Invites").description("Invites"),
-                new Tag().name("Group Members").description("Membership management")))
+                new Tag().name("Group Members").description("Membership management"),
+                new Tag().name("Calendar").description("CRUD for calendars")))
         .addSecurityItem(new SecurityRequirement().addList(securitySchemeName))
         .components(
             new Components()

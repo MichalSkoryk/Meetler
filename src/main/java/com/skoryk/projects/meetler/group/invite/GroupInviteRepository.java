@@ -1,4 +1,4 @@
-package com.skoryk.projects.meetler.group.groupInvite;
+package com.skoryk.projects.meetler.group.invite;
 
 import java.util.Optional;
 import java.util.UUID;

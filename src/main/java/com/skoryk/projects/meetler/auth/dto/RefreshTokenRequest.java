@@ -1,8 +1,9 @@
 package com.skoryk.projects.meetler.auth.dto;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 @Data
 public class RefreshTokenRequest {
-  private String refreshToken;
+  @NotBlank private String refreshToken;
 }

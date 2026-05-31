@@ -3,18 +3,21 @@ spring:
     name: Meetler
 
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/neetler}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/meetler}
     username: ${SPRING_DATASOURCE_USERNAME:meetler}
     password: ${SPRING_DATASOURCE_PASSWORD:TestP@ssword2!}
     driver-class-name: org.postgresql.Driver
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
   jpa:
     hibernate:
       dialect: org.hibernate.dialect.PostgreSQLDialect
-      ddl-auto: update
+      ddl-auto: validate
     properties:
       hibernate:
-      format_sql: true
-    show-sql: true
+        format_sql: true
+    show-sql: false
 
 web:
   cors:
@@ -33,3 +36,6 @@ springdoc:
 
 jwt:
   secret: ${JWT_SECRET:3cfa76ef14937c1c0ea519f8fc057a80fde0a94e1b5da4f94b5d08c7e77b1eae2f3b9a5e8d7c6b5a4f3e2d1c0b9a8d7c6e5f4d3c2b1a0f9e8d7c6b5a4f3e2d1}
+
+external-calendar:
+  token-encryption-key: ${EXTERNAL_CALENDAR_TOKEN_ENCRYPTION_KEY:QkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkI=}

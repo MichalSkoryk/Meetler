@@ -5,6 +5,7 @@ import com.skoryk.projects.meetler.group.dto.GroupResponse;
 import com.skoryk.projects.meetler.group.dto.UpdateGroupRequest;
 import com.skoryk.projects.meetler.user.AppUser;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -21,14 +22,14 @@ public class GroupController {
 
   @PostMapping
   public ResponseEntity<GroupResponse> createGroup(
-      @RequestBody CreateGroupRequest request, @AuthenticationPrincipal AppUser user) {
+      @Valid @RequestBody CreateGroupRequest request, @AuthenticationPrincipal AppUser user) {
     return ResponseEntity.ok(groupService.createGroup(request, user));
   }
 
   @PatchMapping("/{groupId}")
   public ResponseEntity<GroupResponse> updateGroup(
       @PathVariable UUID groupId,
-      @RequestBody UpdateGroupRequest request,
+      @Valid @RequestBody UpdateGroupRequest request,
       @AuthenticationPrincipal AppUser user) {
     return ResponseEntity.ok(groupService.updateGroup(groupId, request, user));
   }

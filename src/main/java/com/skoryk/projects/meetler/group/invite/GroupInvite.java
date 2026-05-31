@@ -1,4 +1,4 @@
-package com.skoryk.projects.meetler.group.groupInvite;
+package com.skoryk.projects.meetler.group.invite;
 
 import com.skoryk.projects.meetler.group.Group;
 import jakarta.persistence.*;

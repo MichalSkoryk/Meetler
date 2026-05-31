@@ -1,7 +1,9 @@
-package com.skoryk.projects.meetler.group.groupInvite;
+package com.skoryk.projects.meetler.group.invite;
 
 import com.skoryk.projects.meetler.user.AppUser;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import java.time.OffsetDateTime;
 import java.util.Map;
 import java.util.UUID;
@@ -13,16 +15,18 @@ import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Group Invites")
 @RestController
-@RequestMapping("/api/groups/{groupId}/invites")
+@RequestMapping("/api/invites")
 @RequiredArgsConstructor
 public class GroupInviteController {
 
   private final GroupInviteService inviteService;
 
-  @PostMapping
+  @PostMapping("/{groupId}")
   public ResponseEntity<Map<String, String>> createInvite(
-      @PathVariable UUID groupId, @RequestBody InviteRequest request) {
-    String code = inviteService.createInvite(groupId, request.maxUses, request.expiresAt);
+      @PathVariable UUID groupId,
+      @Valid @RequestBody InviteRequest request,
+      @AuthenticationPrincipal AppUser user) {
+    String code = inviteService.createInvite(groupId, user, request.maxUses, request.expiresAt);
     return ResponseEntity.ok(Map.of("code", code));
   }
 
@@ -35,7 +39,9 @@ public class GroupInviteController {
 
   @Data
   public static class InviteRequest {
+    @Min(1)
     private Integer maxUses;
+
     private OffsetDateTime expiresAt;
   }
 }

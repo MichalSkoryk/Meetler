@@ -4,12 +4,16 @@ import com.skoryk.projects.meetler.user.dto.CreateUserRequest;
 import com.skoryk.projects.meetler.user.dto.UpdateNameRequest;
 import com.skoryk.projects.meetler.user.dto.UserResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Email;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "User Management")
+@Validated
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
@@ -18,7 +22,7 @@ public class AppUserController {
   private final AppUserService appUserService;
 
   @PostMapping
-  public ResponseEntity<UserResponse> createUser(@RequestBody CreateUserRequest request) {
+  public ResponseEntity<UserResponse> createUser(@Valid @RequestBody CreateUserRequest request) {
     AppUser appUser = appUserService.createUser(request.getEmail(), request.getAuthProvider());
     return ResponseEntity.ok(UserResponse.from(appUser));
   }
@@ -32,7 +36,7 @@ public class AppUserController {
   }
 
   @GetMapping("/by-email")
-  public ResponseEntity<UserResponse> getUserByEmail(@RequestParam String email) {
+  public ResponseEntity<UserResponse> getUserByEmail(@Email @RequestParam String email) {
     return appUserService
         .findByEmail(email)
         .map(appUser -> ResponseEntity.ok(UserResponse.from(appUser)))
@@ -41,7 +45,7 @@ public class AppUserController {
 
   @PatchMapping("/{id}/name")
   public ResponseEntity<UserResponse> updateName(
-      @PathVariable UUID id, @RequestBody UpdateNameRequest request) {
+      @PathVariable UUID id, @Valid @RequestBody UpdateNameRequest request) {
     AppUser updated = appUserService.updateName(id, request.getName());
     return ResponseEntity.ok(UserResponse.from(updated));
   }

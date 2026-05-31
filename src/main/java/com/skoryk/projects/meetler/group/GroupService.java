@@ -59,7 +59,7 @@ public class GroupService {
             .findById(groupId)
             .orElseThrow(() -> new IllegalArgumentException("Group not found"));
 
-    if (groupPermissionService.isOwner(group, user)) {
+    if (!groupPermissionService.isOwner(group, user)) {
       throw new IllegalArgumentException("Not allowed");
     }
 
