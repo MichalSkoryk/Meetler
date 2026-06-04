@@ -1,14 +1,13 @@
 package com.skoryk.projects.meetler.user;
 
-import com.skoryk.projects.meetler.user.dto.CreateUserRequest;
-import com.skoryk.projects.meetler.user.dto.UpdateNameRequest;
-import com.skoryk.projects.meetler.user.dto.UserResponse;
+import com.skoryk.projects.meetler.user.dto.*;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,7 +22,7 @@ public class AppUserController {
 
   @PostMapping
   public ResponseEntity<UserResponse> createUser(@Valid @RequestBody CreateUserRequest request) {
-    AppUser appUser = appUserService.createUser(request.getEmail(), request.getAuthProvider());
+    AppUser appUser = appUserService.createUser(request.getEmail());
     return ResponseEntity.ok(UserResponse.from(appUser));
   }
 
@@ -59,6 +58,21 @@ public class AppUserController {
   @DeleteMapping("/{id}")
   public ResponseEntity<Void> softDelete(@PathVariable UUID id) {
     appUserService.softDelete(id);
+    return ResponseEntity.noContent().build();
+  }
+
+  @PatchMapping("/me/password")
+  public ResponseEntity<Void> changePassword(
+      @AuthenticationPrincipal AppUser user, @Valid @RequestBody ChangePasswordRequest request) {
+    appUserService.changePassword(user, request.getCurrentPassword(), request.getNewPassword());
+    return ResponseEntity.noContent().build();
+  }
+
+  @PostMapping("/me/password")
+  public ResponseEntity<Void> setInitialPassword(
+      @AuthenticationPrincipal AppUser user,
+      @Valid @RequestBody SetInitialPasswordRequest request) {
+    appUserService.setInitialPassword(user, request.getInitialPassword());
     return ResponseEntity.noContent().build();
   }
 }

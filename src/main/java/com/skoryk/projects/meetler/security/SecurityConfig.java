@@ -38,6 +38,8 @@ public class SecurityConfig {
                     .permitAll()
                     .requestMatchers("/swagger-ui.html", "/swagger-ui/**")
                     .permitAll()
+                    .requestMatchers("/api/external-calendars/google/callback")
+                    .permitAll()
                     .anyRequest()
                     .authenticated())
         .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

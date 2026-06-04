@@ -47,6 +47,11 @@ public class ApiExceptionHandler {
     return error(HttpStatus.BAD_REQUEST, ex.getMessage(), null);
   }
 
+  @ExceptionHandler(IllegalStateException.class)
+  public ResponseEntity<Map<String, Object>> handleConflict(IllegalStateException ex) {
+    return error(HttpStatus.CONFLICT, ex.getMessage(), null);
+  }
+
   private ResponseEntity<Map<String, Object>> error(
       HttpStatus status, String message, Map<String, String> fields) {
     Map<String, Object> body = new LinkedHashMap<>();

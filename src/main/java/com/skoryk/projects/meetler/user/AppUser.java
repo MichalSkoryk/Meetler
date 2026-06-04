@@ -36,8 +36,4 @@ public class AppUser {
   private OffsetDateTime deletedAt;
 
   private String passwordHash;
-
-  @Enumerated(EnumType.STRING)
-  @Column(nullable = false)
-  private AuthProvider authProvider;
 }

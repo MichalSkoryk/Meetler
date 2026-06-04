@@ -12,9 +12,19 @@ services:
     build: .
     ports:
       - "8080:8080"
+    env_file:
+      - .env
     environment:
       - 'SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/meetler'
       - 'SPRING_DATASOURCE_USERNAME=meetler'
       - 'SPRING_DATASOURCE_PASSWORD=TestP@ssword2!'
     depends_on:
       - postgres
+
+  test-site:
+    image: 'nginx:alpine'
+    ports:
+      - "8081:80"
+    volumes:
+      - './test-site/index.html:/usr/share/nginx/html/index.html:ro'
+      - './test-site/nginx.conf:/etc/nginx/conf.d/default.conf:ro'
