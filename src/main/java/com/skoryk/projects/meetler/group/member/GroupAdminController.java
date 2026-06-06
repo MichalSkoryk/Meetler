@@ -3,29 +3,22 @@ package com.skoryk.projects.meetler.group.member;
 import com.skoryk.projects.meetler.group.Group;
 import com.skoryk.projects.meetler.group.GroupRepository;
 import com.skoryk.projects.meetler.user.AppUser;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RestController;
 
-@Tag(name = "Groups")
 @RestController
-@RequestMapping("/api/groups/{groupId}/admin")
 @RequiredArgsConstructor
-public class GroupAdminController {
+public class GroupAdminController implements GroupAdminApi {
 
   private final GroupRepository groupRepository;
   private final GroupMemberRepository memberRepository;
   private final GroupPermissionService permissionService;
 
-  @PostMapping("/promote/{userId}")
-  public ResponseEntity<Void> promoteToAdmin(
-      @PathVariable UUID groupId,
-      @PathVariable UUID userId,
-      @AuthenticationPrincipal AppUser requester) {
+  @Override
+  public ResponseEntity<Void> promoteToAdmin(UUID groupId, UUID userId, AppUser requester) {
     Group group =
         groupRepository
             .findById(groupId)
@@ -50,11 +43,8 @@ public class GroupAdminController {
     return ResponseEntity.ok().build();
   }
 
-  @PostMapping("/demote/{userId}")
-  public ResponseEntity<Void> demoteAdmin(
-      @PathVariable UUID groupId,
-      @PathVariable UUID userId,
-      @AuthenticationPrincipal AppUser requester) {
+  @Override
+  public ResponseEntity<Void> demoteAdmin(UUID groupId, UUID userId, AppUser requester) {
     Group group =
         groupRepository
             .findById(groupId)
@@ -79,11 +69,8 @@ public class GroupAdminController {
     return ResponseEntity.ok().build();
   }
 
-  @DeleteMapping("/remove/{userId}")
-  public ResponseEntity<Void> removeMember(
-      @PathVariable UUID groupId,
-      @PathVariable UUID userId,
-      @AuthenticationPrincipal AppUser requester) {
+  @Override
+  public ResponseEntity<Void> removeMember(UUID groupId, UUID userId, AppUser requester) {
     Group group =
         groupRepository
             .findById(groupId)
@@ -112,11 +99,8 @@ public class GroupAdminController {
   }
 
   @Transactional
-  @PostMapping("/transfer/{newOwnerId}")
-  public ResponseEntity<Void> transferOwnership(
-      @PathVariable UUID groupId,
-      @PathVariable UUID newOwnerId,
-      @AuthenticationPrincipal AppUser requester) {
+  @Override
+  public ResponseEntity<Void> transferOwnership(UUID groupId, UUID newOwnerId, AppUser requester) {
     Group group =
         groupRepository
             .findById(groupId)

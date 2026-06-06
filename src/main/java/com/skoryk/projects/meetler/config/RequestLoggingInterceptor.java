@@ -16,7 +16,7 @@ public class RequestLoggingInterceptor implements HandlerInterceptor {
 
   @Override
   public boolean preHandle(
-          HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull Object handler) {
+      HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull Object handler) {
     request.setAttribute(START_TIME_ATTRIBUTE, System.currentTimeMillis());
     log.info(
         "HTTP {} {} started from {}",
@@ -28,7 +28,10 @@ public class RequestLoggingInterceptor implements HandlerInterceptor {
 
   @Override
   public void afterCompletion(
-          @NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull Object handler, Exception ex) {
+      @NonNull HttpServletRequest request,
+      @NonNull HttpServletResponse response,
+      @NonNull Object handler,
+      Exception ex) {
     long durationMs = calculateDurationMs(request);
 
     if (ex == null) {

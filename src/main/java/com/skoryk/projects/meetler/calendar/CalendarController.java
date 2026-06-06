@@ -4,46 +4,37 @@ import com.skoryk.projects.meetler.calendar.dto.CalendarResponse;
 import com.skoryk.projects.meetler.calendar.dto.CreateCalendarRequest;
 import com.skoryk.projects.meetler.calendar.dto.UpdateCalendarRequest;
 import com.skoryk.projects.meetler.user.AppUser;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RestController;
 
-@Tag(name = "Calendar")
 @RestController
-@RequestMapping("/api/calendars")
 @RequiredArgsConstructor
-public class CalendarController {
+public class CalendarController implements CalendarApi {
 
   private final CalendarService calendarService;
 
-  @PostMapping
+  @Override
   public ResponseEntity<CalendarResponse> createCalendar(
-      @Valid @RequestBody CreateCalendarRequest request, @AuthenticationPrincipal AppUser user) {
+      CreateCalendarRequest request, AppUser user) {
     return ResponseEntity.ok(calendarService.createCalendar(request, user));
   }
 
-  @GetMapping
-  public ResponseEntity<List<CalendarResponse>> getUserCalendars(
-      @AuthenticationPrincipal AppUser user) {
+  @Override
+  public ResponseEntity<List<CalendarResponse>> getUserCalendars(AppUser user) {
     return ResponseEntity.ok(calendarService.getUserCalendars(user));
   }
 
-  @PatchMapping("/{id}")
+  @Override
   public ResponseEntity<CalendarResponse> updateCalendar(
-      @PathVariable UUID id,
-      @Valid @RequestBody UpdateCalendarRequest request,
-      @AuthenticationPrincipal AppUser user) {
+      UUID id, UpdateCalendarRequest request, AppUser user) {
     return ResponseEntity.ok(calendarService.updateCalendar(id, request, user));
   }
 
-  @DeleteMapping("/{id}")
-  public ResponseEntity<Void> deleteCalendar(
-      @PathVariable UUID id, @AuthenticationPrincipal AppUser user) {
+  @Override
+  public ResponseEntity<Void> deleteCalendar(UUID id, AppUser user) {
     calendarService.deleteCalendar(id, user);
     return ResponseEntity.noContent().build();
   }

@@ -1,77 +1,65 @@
 package com.skoryk.projects.meetler.user;
 
 import com.skoryk.projects.meetler.user.dto.*;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.Email;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RestController;
 
-@Tag(name = "User Management")
-@Validated
 @RestController
-@RequestMapping("/api/users")
 @RequiredArgsConstructor
-public class AppUserController {
+public class AppUserController implements AppUserApi {
 
   private final AppUserService appUserService;
 
-  @PostMapping
-  public ResponseEntity<UserResponse> createUser(@Valid @RequestBody CreateUserRequest request) {
+  @Override
+  public ResponseEntity<UserResponse> createUser(CreateUserRequest request) {
     AppUser appUser = appUserService.createUser(request.getEmail());
     return ResponseEntity.ok(UserResponse.from(appUser));
   }
 
-  @GetMapping("/{id}")
-  public ResponseEntity<UserResponse> getUser(@PathVariable UUID id) {
+  @Override
+  public ResponseEntity<UserResponse> getUser(UUID id) {
     return appUserService
         .findById(id)
         .map(appUser -> ResponseEntity.ok(UserResponse.from(appUser)))
         .orElse(ResponseEntity.notFound().build());
   }
 
-  @GetMapping("/by-email")
-  public ResponseEntity<UserResponse> getUserByEmail(@Email @RequestParam String email) {
+  @Override
+  public ResponseEntity<UserResponse> getUserByEmail(String email) {
     return appUserService
         .findByEmail(email)
         .map(appUser -> ResponseEntity.ok(UserResponse.from(appUser)))
         .orElse(ResponseEntity.notFound().build());
   }
 
-  @PatchMapping("/{id}/name")
-  public ResponseEntity<UserResponse> updateName(
-      @PathVariable UUID id, @Valid @RequestBody UpdateNameRequest request) {
+  @Override
+  public ResponseEntity<UserResponse> updateName(UUID id, UpdateNameRequest request) {
     AppUser updated = appUserService.updateName(id, request.getName());
     return ResponseEntity.ok(UserResponse.from(updated));
   }
 
-  @PostMapping("/{id}/upgrade")
-  public ResponseEntity<UserResponse> upgradeUser(@PathVariable UUID id) {
+  @Override
+  public ResponseEntity<UserResponse> upgradeUser(UUID id) {
     AppUser upgraded = appUserService.upgradeToUser(id);
     return ResponseEntity.ok(UserResponse.from(upgraded));
   }
 
-  @DeleteMapping("/{id}")
-  public ResponseEntity<Void> softDelete(@PathVariable UUID id) {
+  @Override
+  public ResponseEntity<Void> softDelete(UUID id) {
     appUserService.softDelete(id);
     return ResponseEntity.noContent().build();
   }
 
-  @PatchMapping("/me/password")
-  public ResponseEntity<Void> changePassword(
-      @AuthenticationPrincipal AppUser user, @Valid @RequestBody ChangePasswordRequest request) {
+  @Override
+  public ResponseEntity<Void> changePassword(AppUser user, ChangePasswordRequest request) {
     appUserService.changePassword(user, request.getCurrentPassword(), request.getNewPassword());
     return ResponseEntity.noContent().build();
   }
 
-  @PostMapping("/me/password")
-  public ResponseEntity<Void> setInitialPassword(
-      @AuthenticationPrincipal AppUser user,
-      @Valid @RequestBody SetInitialPasswordRequest request) {
+  @Override
+  public ResponseEntity<Void> setInitialPassword(AppUser user, SetInitialPasswordRequest request) {
     appUserService.setInitialPassword(user, request.getInitialPassword());
     return ResponseEntity.noContent().build();
   }

@@ -2,43 +2,32 @@ package com.skoryk.projects.meetler.group.member;
 
 import com.skoryk.projects.meetler.group.invite.GroupInviteService;
 import com.skoryk.projects.meetler.user.AppUser;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.constraints.NotBlank;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RestController;
 
-@Tag(name = "Group Members")
-@Validated
 @RestController
-@RequestMapping("/api/groups/{groupId}/members")
 @RequiredArgsConstructor
-public class GroupMemberController {
+public class GroupMemberController implements GroupMemberApi {
 
   private final GroupMemberService memberService;
   private final GroupInviteService inviteService;
 
-  @PostMapping("/join")
-  public ResponseEntity<Void> joinGroup(
-      @PathVariable UUID groupId,
-      @NotBlank @RequestParam String code,
-      @AuthenticationPrincipal AppUser user) {
+  @Override
+  public ResponseEntity<Void> joinGroup(UUID groupId, String code, AppUser user) {
     inviteService.joinGroupWithCode(groupId, code, user);
     return ResponseEntity.ok().build();
   }
 
-  @DeleteMapping("/leave")
-  public ResponseEntity<Void> leaveGroup(
-      @PathVariable UUID groupId, @AuthenticationPrincipal AppUser user) {
+  @Override
+  public ResponseEntity<Void> leaveGroup(UUID groupId, AppUser user) {
     memberService.removeMember(groupId, user);
     return ResponseEntity.noContent().build();
   }
 
-  @GetMapping
-  public ResponseEntity<?> listMembers(@PathVariable UUID groupId) {
+  @Override
+  public ResponseEntity<?> listMembers(UUID groupId) {
     return ResponseEntity.ok(memberService.getGroupMembers(groupId));
   }
 }
