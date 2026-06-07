@@ -23,5 +23,3 @@ public interface AvailabilityTemplateRepository extends JpaRepository<Availabili
   @Query("update AvailabilityTemplate t set t.isDefault = false where t.user = :user")
   void clearDefaultForUser(AppUser user);
 }
-
-

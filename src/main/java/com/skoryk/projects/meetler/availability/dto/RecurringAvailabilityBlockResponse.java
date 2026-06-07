@@ -30,4 +30,3 @@ public class RecurringAvailabilityBlockResponse {
   private OffsetDateTime createdAt;
   private OffsetDateTime updatedAt;
 }
-

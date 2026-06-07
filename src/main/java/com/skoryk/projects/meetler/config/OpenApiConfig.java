@@ -28,7 +28,9 @@ public class OpenApiConfig {
                 new Tag().name("Authentication").description("Auth endpoints"),
                 new Tag().name("User Management").description("Application user management"),
                 new Tag().name("Groups").description("Group management"),
-                new Tag().name("Group Administration").description("Group role and ownership management"),
+                new Tag()
+                    .name("Group Administration")
+                    .description("Group role and ownership management"),
                 new Tag().name("Group Invites").description("Invites"),
                 new Tag().name("Group Members").description("Membership management"),
                 new Tag().name("Calendars").description("CRUD for calendars"),

@@ -139,5 +139,3 @@ public class AvailabilityTemplateController implements AvailabilityTemplateApi {
     return ResponseEntity.noContent().build();
   }
 }
-
-

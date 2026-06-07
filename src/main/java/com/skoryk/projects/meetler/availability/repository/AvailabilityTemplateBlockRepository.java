@@ -40,5 +40,3 @@ public interface AvailabilityTemplateBlockRepository
 
   Optional<AvailabilityTemplateBlock> findByIdAndTemplate(UUID id, AvailabilityTemplate template);
 }
-
-

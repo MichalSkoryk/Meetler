@@ -18,4 +18,3 @@ public class UpdateAvailabilityBlockRequest {
   @Size(max = 255)
   private String note;
 }
-

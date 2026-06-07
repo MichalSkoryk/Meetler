@@ -4,5 +4,3 @@ public enum AvailabilityBlockStatus {
   AVAILABLE,
   BUSY
 }
-
-

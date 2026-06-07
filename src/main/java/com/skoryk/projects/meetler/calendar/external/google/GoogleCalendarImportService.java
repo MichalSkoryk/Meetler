@@ -20,7 +20,6 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.List;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
@@ -89,7 +88,11 @@ public class GoogleCalendarImportService {
   }
 
   private int importEvents(
-      Calendar calendar, String accessToken, String calendarExternalId, OffsetDateTime from, OffsetDateTime to) {
+      Calendar calendar,
+      String accessToken,
+      String calendarExternalId,
+      OffsetDateTime from,
+      OffsetDateTime to) {
     GoogleCalendarEventsResponse response =
         restClient
             .get()
@@ -148,7 +151,8 @@ public class GoogleCalendarImportService {
       AppUser user, ExternalCalendarAccount account, GoogleCalendarResponse googleCalendar) {
     Calendar calendar =
         calendarRepository
-            .findByUserAndProviderAndExternalId(user, CalendarProvider.GOOGLE, googleCalendar.getId())
+            .findByUserAndProviderAndExternalId(
+                user, CalendarProvider.GOOGLE, googleCalendar.getId())
             .orElseGet(
                 () ->
                     Calendar.builder()
@@ -160,20 +164,24 @@ public class GoogleCalendarImportService {
                         .syncDirection(CalendarSynchronizationType.FROM_PROVIDER)
                         .build());
 
-    calendar.setName(googleCalendar.getSummary() == null ? "Google Calendar" : googleCalendar.getSummary());
+    calendar.setName(
+        googleCalendar.getSummary() == null ? "Google Calendar" : googleCalendar.getSummary());
     calendar.setColor(googleCalendar.getBackgroundColor());
     calendar.setExternalCalendarAccount(account);
-    calendar.setActive(Boolean.TRUE.equals(googleCalendar.getSelected()) || googleCalendar.getSelected() == null);
+    calendar.setActive(
+        Boolean.TRUE.equals(googleCalendar.getSelected()) || googleCalendar.getSelected() == null);
     return calendarRepository.save(calendar);
   }
 
   private String activeAccessToken(ExternalCalendarAccount account) {
-    if (account.getExpiresAt() == null || account.getExpiresAt().isAfter(OffsetDateTime.now().plusMinutes(1))) {
+    if (account.getExpiresAt() == null
+        || account.getExpiresAt().isAfter(OffsetDateTime.now().plusMinutes(1))) {
       return tokenEncryptionService.decrypt(account.getAccessTokenEncrypted());
     }
 
     if (account.getRefreshTokenEncrypted() == null) {
-      throw new IllegalArgumentException("Google access token expired and no refresh token is stored");
+      throw new IllegalArgumentException(
+          "Google access token expired and no refresh token is stored");
     }
 
     MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
@@ -207,7 +215,8 @@ public class GoogleCalendarImportService {
       return OffsetDateTime.parse(date.getDateTime());
     }
     if (date.getDate() != null && !date.getDate().isBlank()) {
-      ZoneId zoneId = date.getTimeZone() == null ? ZoneId.systemDefault() : ZoneId.of(date.getTimeZone());
+      ZoneId zoneId =
+          date.getTimeZone() == null ? ZoneId.systemDefault() : ZoneId.of(date.getTimeZone());
       return LocalDate.parse(date.getDate()).atStartOfDay(zoneId).toOffsetDateTime();
     }
     return null;

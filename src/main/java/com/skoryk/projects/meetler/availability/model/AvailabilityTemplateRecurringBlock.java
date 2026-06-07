@@ -72,5 +72,3 @@ public class AvailabilityTemplateRecurringBlock {
   @Column(name = "updated_at", nullable = false)
   private OffsetDateTime updatedAt;
 }
-
-

@@ -18,4 +18,3 @@ public class ResolvedAvailabilityWindowResponse {
   private UUID sourceBlockId;
   private String note;
 }
-

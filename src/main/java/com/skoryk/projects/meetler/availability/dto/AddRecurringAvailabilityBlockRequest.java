@@ -45,4 +45,3 @@ public class AddRecurringAvailabilityBlockRequest {
 
   private LocalDate endsOn;
 }
-

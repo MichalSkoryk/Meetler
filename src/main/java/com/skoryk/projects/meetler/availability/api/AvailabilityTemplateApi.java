@@ -322,5 +322,3 @@ public interface AvailabilityTemplateApi {
       @PathVariable UUID sourceId,
       @AuthenticationPrincipal AppUser user);
 }
-
-

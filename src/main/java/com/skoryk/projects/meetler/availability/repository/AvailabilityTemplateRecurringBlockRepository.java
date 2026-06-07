@@ -41,5 +41,3 @@ public interface AvailabilityTemplateRecurringBlockRepository
   Optional<AvailabilityTemplateRecurringBlock> findByIdAndTemplate(
       UUID id, AvailabilityTemplate template);
 }
-
-

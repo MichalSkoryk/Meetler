@@ -21,4 +21,3 @@ public class AddAvailabilityBlockRequest {
   @Size(max = 255)
   private String note;
 }
-

@@ -5,5 +5,3 @@ public enum ResolvedAvailabilitySource {
   RECURRING,
   EXTERNAL_CALENDAR
 }
-
-

@@ -16,4 +16,3 @@ public class AvailabilityTemplateResponse {
   private OffsetDateTime createdAt;
   private OffsetDateTime updatedAt;
 }
-

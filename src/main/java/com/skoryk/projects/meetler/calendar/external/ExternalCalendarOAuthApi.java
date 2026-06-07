@@ -1,7 +1,7 @@
 package com.skoryk.projects.meetler.calendar.external;
 
-import com.skoryk.projects.meetler.calendar.external.dto.ExternalCalendarImportResponse;
 import com.skoryk.projects.meetler.calendar.external.dto.ExternalCalendarAccountResponse;
+import com.skoryk.projects.meetler.calendar.external.dto.ExternalCalendarImportResponse;
 import com.skoryk.projects.meetler.user.AppUser;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

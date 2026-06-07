@@ -20,4 +20,3 @@ public class AvailabilityBlockResponse {
   private OffsetDateTime createdAt;
   private OffsetDateTime updatedAt;
 }
-

@@ -5,5 +5,3 @@ public enum AvailabilityBlockSource {
   IMPORTED,
   TEMPLATE
 }
-
-

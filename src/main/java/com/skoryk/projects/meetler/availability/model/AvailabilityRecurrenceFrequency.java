@@ -6,5 +6,3 @@ public enum AvailabilityRecurrenceFrequency {
   MONTHLY,
   YEARLY
 }
-
-

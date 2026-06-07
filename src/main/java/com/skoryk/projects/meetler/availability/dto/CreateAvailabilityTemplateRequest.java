@@ -12,11 +12,9 @@ public class CreateAvailabilityTemplateRequest {
   @Size(max = 255)
   private String name;
 
-  @NotNull
-  private boolean isDefault;
+  @NotNull private boolean isDefault;
 
   @NotBlank
   @Size(max = 64)
   private String timezone;
 }
-
