@@ -1,5 +1,6 @@
-package com.skoryk.projects.meetler.availability;
+package com.skoryk.projects.meetler.availability.repository;
 
+import com.skoryk.projects.meetler.availability.model.AvailabilityTemplate;
 import com.skoryk.projects.meetler.user.AppUser;
 import java.util.List;
 import java.util.Optional;
@@ -22,3 +23,5 @@ public interface AvailabilityTemplateRepository extends JpaRepository<Availabili
   @Query("update AvailabilityTemplate t set t.isDefault = false where t.user = :user")
   void clearDefaultForUser(AppUser user);
 }
+
+

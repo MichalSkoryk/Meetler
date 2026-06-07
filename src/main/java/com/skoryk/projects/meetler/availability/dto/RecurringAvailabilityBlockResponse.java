@@ -1,7 +1,7 @@
 package com.skoryk.projects.meetler.availability.dto;
 
-import com.skoryk.projects.meetler.availability.AvailabilityBlockStatus;
-import com.skoryk.projects.meetler.availability.AvailabilityRecurrenceFrequency;
+import com.skoryk.projects.meetler.availability.model.AvailabilityBlockStatus;
+import com.skoryk.projects.meetler.availability.model.AvailabilityRecurrenceFrequency;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -30,3 +30,4 @@ public class RecurringAvailabilityBlockResponse {
   private OffsetDateTime createdAt;
   private OffsetDateTime updatedAt;
 }
+

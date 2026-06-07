@@ -1,8 +1,11 @@
 package com.skoryk.projects.meetler.group.member;
 
+import com.skoryk.projects.meetler.group.member.dto.GroupAvailabilityTemplateResponse;
+import com.skoryk.projects.meetler.group.member.dto.SelectGroupAvailabilityTemplateRequest;
 import com.skoryk.projects.meetler.user.AppUser;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import java.util.UUID;
 import org.springframework.http.ResponseEntity;
@@ -12,6 +15,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
@@ -43,4 +47,30 @@ public interface GroupMemberApi {
       description = "Returns the members and roles for the selected group.")
   @GetMapping
   ResponseEntity<?> listMembers(@PathVariable UUID groupId);
+
+  @Operation(
+      summary = "Get my group availability template",
+      description =
+          "Returns which availability template the authenticated group member uses in this group.")
+  @GetMapping("/me/availability-template")
+  ResponseEntity<GroupAvailabilityTemplateResponse> getMyAvailabilityTemplate(
+      @PathVariable UUID groupId, @AuthenticationPrincipal AppUser user);
+
+  @Operation(
+      summary = "Select my group availability template",
+      description =
+          "Selects one of the authenticated user's availability templates to represent them in this group.")
+  @PostMapping("/me/availability-template")
+  ResponseEntity<GroupAvailabilityTemplateResponse> selectMyAvailabilityTemplate(
+      @PathVariable UUID groupId,
+      @Valid @RequestBody SelectGroupAvailabilityTemplateRequest request,
+      @AuthenticationPrincipal AppUser user);
+
+  @Operation(
+      summary = "Clear my group availability template",
+      description =
+          "Clears the authenticated member's selected availability template for this group.")
+  @DeleteMapping("/me/availability-template")
+  ResponseEntity<GroupAvailabilityTemplateResponse> clearMyAvailabilityTemplate(
+      @PathVariable UUID groupId, @AuthenticationPrincipal AppUser user);
 }

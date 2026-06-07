@@ -1,4 +1,4 @@
-package com.skoryk.projects.meetler.availability;
+package com.skoryk.projects.meetler.availability.model;
 
 import jakarta.persistence.*;
 import java.time.DayOfWeek;
@@ -72,3 +72,5 @@ public class AvailabilityTemplateRecurringBlock {
   @Column(name = "updated_at", nullable = false)
   private OffsetDateTime updatedAt;
 }
+
+

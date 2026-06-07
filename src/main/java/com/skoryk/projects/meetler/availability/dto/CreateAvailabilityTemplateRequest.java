@@ -1,6 +1,7 @@
 package com.skoryk.projects.meetler.availability.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -11,9 +12,11 @@ public class CreateAvailabilityTemplateRequest {
   @Size(max = 255)
   private String name;
 
-  @NotBlank private boolean isDefault;
+  @NotNull
+  private boolean isDefault;
 
   @NotBlank
   @Size(max = 64)
   private String timezone;
 }
+

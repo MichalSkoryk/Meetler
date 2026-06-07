@@ -1,6 +1,9 @@
-package com.skoryk.projects.meetler.availability;
+package com.skoryk.projects.meetler.availability.repository;
 
+import com.skoryk.projects.meetler.availability.model.AvailabilityTemplate;
+import com.skoryk.projects.meetler.availability.model.AvailabilityTemplateBlock;
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
@@ -23,5 +26,19 @@ public interface AvailabilityTemplateBlockRepository
   Page<AvailabilityTemplateBlock> findByTemplateOverlappingRange(
       AvailabilityTemplate template, OffsetDateTime from, OffsetDateTime to, Pageable pageable);
 
+  @Query(
+      """
+      select b
+      from AvailabilityTemplateBlock b
+      where b.template = :template
+        and b.endsAt > :from
+        and b.startsAt < :to
+      order by b.startsAt asc
+      """)
+  List<AvailabilityTemplateBlock> findByTemplateOverlappingRange(
+      AvailabilityTemplate template, OffsetDateTime from, OffsetDateTime to);
+
   Optional<AvailabilityTemplateBlock> findByIdAndTemplate(UUID id, AvailabilityTemplate template);
 }
+
+

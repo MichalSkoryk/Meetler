@@ -1,6 +1,6 @@
 package com.skoryk.projects.meetler.availability.dto;
 
-import com.skoryk.projects.meetler.availability.AvailabilityRecurrenceFrequency;
+import com.skoryk.projects.meetler.availability.model.AvailabilityRecurrenceFrequency;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
@@ -35,3 +35,4 @@ public class ConvertAvailabilityBlockToRecurringRequest {
 
   private boolean deleteOriginalBlock = true;
 }
+

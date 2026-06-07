@@ -16,3 +16,4 @@ public class UpdateAvailabilityTemplateRequest {
   @Size(max = 64)
   private String timezone;
 }
+

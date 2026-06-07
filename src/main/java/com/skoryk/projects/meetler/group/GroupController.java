@@ -1,9 +1,12 @@
 package com.skoryk.projects.meetler.group;
 
 import com.skoryk.projects.meetler.group.dto.CreateGroupRequest;
+import com.skoryk.projects.meetler.group.dto.GroupAvailabilitySlotResponse;
 import com.skoryk.projects.meetler.group.dto.GroupResponse;
 import com.skoryk.projects.meetler.group.dto.UpdateGroupRequest;
 import com.skoryk.projects.meetler.user.AppUser;
+import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -14,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class GroupController implements GroupApi {
 
   private final GroupService groupService;
+  private final GroupAvailabilityService groupAvailabilityService;
 
   @Override
   public ResponseEntity<GroupResponse> createGroup(CreateGroupRequest request, AppUser user) {
@@ -30,5 +34,11 @@ public class GroupController implements GroupApi {
   public ResponseEntity<Void> deleteGroup(UUID groupId, AppUser user) {
     groupService.deleteGroup(groupId, user);
     return ResponseEntity.noContent().build();
+  }
+
+  @Override
+  public ResponseEntity<List<GroupAvailabilitySlotResponse>> getAvailabilityGrid(
+      UUID groupId, OffsetDateTime from, OffsetDateTime to, AppUser user) {
+    return ResponseEntity.ok(groupAvailabilityService.getAvailabilityGrid(groupId, user, from, to));
   }
 }

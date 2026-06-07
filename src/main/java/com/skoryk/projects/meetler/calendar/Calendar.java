@@ -1,5 +1,6 @@
 package com.skoryk.projects.meetler.calendar;
 
+import com.skoryk.projects.meetler.calendar.external.ExternalCalendarAccount;
 import com.skoryk.projects.meetler.user.AppUser;
 import jakarta.persistence.*;
 import java.time.OffsetDateTime;
@@ -39,6 +40,10 @@ public class Calendar {
   private boolean isActive;
 
   @Column private String externalId;
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "external_calendar_account_id")
+  private ExternalCalendarAccount externalCalendarAccount;
 
   @Enumerated(EnumType.STRING)
   @Column(name = "sync_direction", nullable = false)

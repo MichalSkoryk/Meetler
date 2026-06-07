@@ -1,4 +1,4 @@
-package com.skoryk.projects.meetler.availability;
+package com.skoryk.projects.meetler.availability.model;
 
 import com.skoryk.projects.meetler.calendar.Calendar;
 import jakarta.persistence.*;
@@ -33,3 +33,5 @@ public class AvailabilityTemplateSourceCalendar {
   @Column(name = "created_at", nullable = false)
   private OffsetDateTime createdAt;
 }
+
+

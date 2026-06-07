@@ -28,9 +28,17 @@ public class OpenApiConfig {
                 new Tag().name("Authentication").description("Auth endpoints"),
                 new Tag().name("User Management").description("Application user management"),
                 new Tag().name("Groups").description("Group management"),
+                new Tag().name("Group Administration").description("Group role and ownership management"),
                 new Tag().name("Group Invites").description("Invites"),
                 new Tag().name("Group Members").description("Membership management"),
-                new Tag().name("Calendar").description("CRUD for calendars")))
+                new Tag().name("Calendars").description("CRUD for calendars"),
+                new Tag()
+                    .name("External Calendar OAuth")
+                    .description("OAuth connection flow for external calendar providers"),
+                new Tag()
+                    .name("Availability Templates")
+                    .description(
+                        "Availability templates, one-off blocks, recurring rules, source calendars, and resolved availability windows")))
         .addSecurityItem(new SecurityRequirement().addList(securitySchemeName))
         .components(
             new Components()

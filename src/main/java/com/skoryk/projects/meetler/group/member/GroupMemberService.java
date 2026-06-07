@@ -1,7 +1,10 @@
 package com.skoryk.projects.meetler.group.member;
 
+import com.skoryk.projects.meetler.availability.model.AvailabilityTemplate;
+import com.skoryk.projects.meetler.availability.repository.AvailabilityTemplateRepository;
 import com.skoryk.projects.meetler.group.Group;
 import com.skoryk.projects.meetler.group.GroupRepository;
+import com.skoryk.projects.meetler.group.member.dto.GroupAvailabilityTemplateResponse;
 import com.skoryk.projects.meetler.user.AppUser;
 import jakarta.transaction.Transactional;
 import java.time.OffsetDateTime;
@@ -16,6 +19,7 @@ public class GroupMemberService {
 
   private final GroupRepository groupRepository;
   private final GroupMemberRepository memberRepository;
+  private final AvailabilityTemplateRepository availabilityTemplateRepository;
 
   public void addMember(UUID groupId, AppUser user, GroupRole role) {
     Group group =
@@ -64,5 +68,46 @@ public class GroupMemberService {
             .orElseThrow(() -> new IllegalArgumentException("Group not found"));
 
     return memberRepository.findByGroup(group);
+  }
+
+  @Transactional
+  public GroupAvailabilityTemplateResponse selectAvailabilityTemplate(
+      UUID groupId, AppUser user, UUID availabilityTemplateId) {
+    GroupMember member = getCurrentMember(groupId, user);
+    AvailabilityTemplate template =
+        availabilityTemplateRepository
+            .findByIdAndUser(availabilityTemplateId, user)
+            .orElseThrow(() -> new IllegalArgumentException("Availability template not found"));
+
+    member.setAvailabilityTemplate(template);
+    return toAvailabilityTemplateResponse(memberRepository.save(member));
+  }
+
+  @Transactional
+  public GroupAvailabilityTemplateResponse clearAvailabilityTemplate(UUID groupId, AppUser user) {
+    GroupMember member = getCurrentMember(groupId, user);
+    member.setAvailabilityTemplate(null);
+    return toAvailabilityTemplateResponse(memberRepository.save(member));
+  }
+
+  public GroupAvailabilityTemplateResponse getAvailabilityTemplate(UUID groupId, AppUser user) {
+    return toAvailabilityTemplateResponse(getCurrentMember(groupId, user));
+  }
+
+  private GroupMember getCurrentMember(UUID groupId, AppUser user) {
+    return memberRepository
+        .findByGroupIdAndUserId(groupId, user.getId())
+        .orElseThrow(() -> new IllegalArgumentException("User not in group"));
+  }
+
+  private GroupAvailabilityTemplateResponse toAvailabilityTemplateResponse(GroupMember member) {
+    AvailabilityTemplate template = member.getAvailabilityTemplate();
+    return GroupAvailabilityTemplateResponse.builder()
+        .groupId(member.getGroup().getId())
+        .userId(member.getUser().getId())
+        .availabilityTemplateId(template == null ? null : template.getId())
+        .availabilityTemplateName(template == null ? null : template.getName())
+        .timezone(template == null ? null : template.getTimezone())
+        .build();
   }
 }

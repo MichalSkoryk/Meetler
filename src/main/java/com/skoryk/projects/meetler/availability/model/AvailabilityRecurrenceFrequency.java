@@ -1,4 +1,4 @@
-package com.skoryk.projects.meetler.availability;
+package com.skoryk.projects.meetler.availability.model;
 
 public enum AvailabilityRecurrenceFrequency {
   DAILY,
@@ -6,3 +6,5 @@ public enum AvailabilityRecurrenceFrequency {
   MONTHLY,
   YEARLY
 }
+
+

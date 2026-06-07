@@ -1,4 +1,4 @@
-package com.skoryk.projects.meetler.availability;
+package com.skoryk.projects.meetler.availability.api;
 
 import com.skoryk.projects.meetler.availability.dto.AddAvailabilityBlockRequest;
 import com.skoryk.projects.meetler.availability.dto.AddRecurringAvailabilityBlockRequest;
@@ -8,6 +8,7 @@ import com.skoryk.projects.meetler.availability.dto.AvailabilityTemplateResponse
 import com.skoryk.projects.meetler.availability.dto.ConvertAvailabilityBlockToRecurringRequest;
 import com.skoryk.projects.meetler.availability.dto.CreateAvailabilityTemplateRequest;
 import com.skoryk.projects.meetler.availability.dto.RecurringAvailabilityBlockResponse;
+import com.skoryk.projects.meetler.availability.dto.ResolvedAvailabilityWindowResponse;
 import com.skoryk.projects.meetler.availability.dto.SourceCalendarResponse;
 import com.skoryk.projects.meetler.availability.dto.UpdateAvailabilityBlockRequest;
 import com.skoryk.projects.meetler.availability.dto.UpdateAvailabilityTemplateRequest;
@@ -62,6 +63,19 @@ public interface AvailabilityTemplateApi {
   @GetMapping("/{templateId}")
   ResponseEntity<AvailabilityTemplateResponse> getTemplate(
       @PathVariable UUID templateId, @AuthenticationPrincipal AppUser user);
+
+  @Operation(
+      summary = "Resolve availability template",
+      description =
+          "Expands one availability template into concrete availability windows for a date-time range. "
+              + "Recurring rules are expanded in the template timezone, and one-off blocks override overlapping recurring windows. "
+              + "The requested range must not be longer than 366 days.")
+  @GetMapping("/{templateId}/resolved")
+  ResponseEntity<List<ResolvedAvailabilityWindowResponse>> resolveTemplateAvailability(
+      @PathVariable UUID templateId,
+      @RequestParam OffsetDateTime from,
+      @RequestParam OffsetDateTime to,
+      @AuthenticationPrincipal AppUser user);
 
   @Operation(
       summary = "Update an availability template",
@@ -308,3 +322,5 @@ public interface AvailabilityTemplateApi {
       @PathVariable UUID sourceId,
       @AuthenticationPrincipal AppUser user);
 }
+
+

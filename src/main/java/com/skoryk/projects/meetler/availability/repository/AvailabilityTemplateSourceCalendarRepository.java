@@ -1,5 +1,7 @@
-package com.skoryk.projects.meetler.availability;
+package com.skoryk.projects.meetler.availability.repository;
 
+import com.skoryk.projects.meetler.availability.model.AvailabilityTemplate;
+import com.skoryk.projects.meetler.availability.model.AvailabilityTemplateSourceCalendar;
 import com.skoryk.projects.meetler.calendar.Calendar;
 import java.util.List;
 import java.util.Optional;
@@ -17,3 +19,5 @@ public interface AvailabilityTemplateSourceCalendarRepository
   Optional<AvailabilityTemplateSourceCalendar> findByTemplateAndCalendar(
       AvailabilityTemplate template, Calendar calendar);
 }
+
+

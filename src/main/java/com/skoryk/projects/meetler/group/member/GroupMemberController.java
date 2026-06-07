@@ -1,6 +1,8 @@
 package com.skoryk.projects.meetler.group.member;
 
 import com.skoryk.projects.meetler.group.invite.GroupInviteService;
+import com.skoryk.projects.meetler.group.member.dto.GroupAvailabilityTemplateResponse;
+import com.skoryk.projects.meetler.group.member.dto.SelectGroupAvailabilityTemplateRequest;
 import com.skoryk.projects.meetler.user.AppUser;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -29,5 +31,25 @@ public class GroupMemberController implements GroupMemberApi {
   @Override
   public ResponseEntity<?> listMembers(UUID groupId) {
     return ResponseEntity.ok(memberService.getGroupMembers(groupId));
+  }
+
+  @Override
+  public ResponseEntity<GroupAvailabilityTemplateResponse> getMyAvailabilityTemplate(
+      UUID groupId, AppUser user) {
+    return ResponseEntity.ok(memberService.getAvailabilityTemplate(groupId, user));
+  }
+
+  @Override
+  public ResponseEntity<GroupAvailabilityTemplateResponse> selectMyAvailabilityTemplate(
+      UUID groupId, SelectGroupAvailabilityTemplateRequest request, AppUser user) {
+    return ResponseEntity.ok(
+        memberService.selectAvailabilityTemplate(
+            groupId, user, request.getAvailabilityTemplateId()));
+  }
+
+  @Override
+  public ResponseEntity<GroupAvailabilityTemplateResponse> clearMyAvailabilityTemplate(
+      UUID groupId, AppUser user) {
+    return ResponseEntity.ok(memberService.clearAvailabilityTemplate(groupId, user));
   }
 }

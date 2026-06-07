@@ -3,14 +3,21 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Meetler Auth Test</title>
+    <title>Meetler Test Console</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <style>
       :root {
         color-scheme: light;
         font-family:
           Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        background: #f6f7f9;
-        color: #1f2937;
+        background: #f4f6f8;
+        color: #172033;
+      }
+
+      * {
+        box-sizing: border-box;
       }
 
       body {
@@ -18,83 +25,97 @@
         min-height: 100vh;
       }
 
-      main {
-        width: min(920px, calc(100% - 32px));
+      button,
+      input,
+      select,
+      textarea {
+        font: inherit;
+      }
+
+      .app {
+        width: min(1440px, calc(100% - 28px));
         margin: 0 auto;
-        padding: 32px 0;
+        padding: 24px 0;
+      }
+
+      header {
+        display: flex;
+        gap: 16px;
+        align-items: flex-start;
+        justify-content: space-between;
+        margin-bottom: 16px;
       }
 
       h1 {
-        margin: 0 0 8px;
+        margin: 0;
         font-size: 28px;
         letter-spacing: 0;
       }
 
       h2 {
-        margin: 0 0 16px;
+        margin: 0 0 14px;
         font-size: 18px;
         letter-spacing: 0;
       }
 
-      .layout {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-        gap: 16px;
-        margin-top: 24px;
+      h3 {
+        margin: 0 0 10px;
+        font-size: 15px;
+        letter-spacing: 0;
       }
 
-      section {
-        background: #ffffff;
-        border: 1px solid #d9dee7;
-        border-radius: 8px;
-        padding: 18px;
-      }
-
-      label {
-        display: block;
-        margin: 12px 0 6px;
+      .muted {
+        color: #637084;
         font-size: 13px;
-        font-weight: 650;
       }
 
-      input {
-        box-sizing: border-box;
-        width: 100%;
-        height: 38px;
-        border: 1px solid #cbd2dc;
-        border-radius: 6px;
-        padding: 0 10px;
-        font: inherit;
+      .status {
+        min-width: 220px;
+        border: 1px solid #ccd5e2;
+        border-radius: 8px;
+        background: #ffffff;
+        padding: 12px;
+        font-size: 13px;
       }
 
-      .buttons {
+      .tabs {
         display: flex;
         flex-wrap: wrap;
         gap: 8px;
-        margin-top: 16px;
+        margin-bottom: 16px;
       }
 
-      button,
-      a.button {
+      .tabs button,
+      .button,
+      button {
+        min-height: 36px;
+        border: 1px solid #243044;
+        border-radius: 6px;
+        background: #243044;
+        color: #ffffff;
+        padding: 0 12px;
+        font-weight: 650;
+        cursor: pointer;
+        text-decoration: none;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        min-height: 38px;
-        border: 1px solid #1f2937;
-        border-radius: 6px;
-        background: #1f2937;
+      }
+
+      .tabs button {
+        background: #ffffff;
+        color: #243044;
+      }
+
+      .tabs button.active {
+        background: #243044;
         color: #ffffff;
-        padding: 0 12px;
-        font: inherit;
-        font-weight: 650;
-        text-decoration: none;
-        cursor: pointer;
       }
 
       button.secondary,
-      a.secondary {
+      .button.secondary {
         background: #ffffff;
-        color: #1f2937;
+        color: #243044;
       }
 
       button.danger {
@@ -102,94 +123,162 @@
         background: #b42318;
       }
 
+      button:disabled {
+        cursor: not-allowed;
+        opacity: 0.55;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 14px;
+      }
+
+      .wide {
+        grid-column: 1 / -1;
+      }
+
+      section,
+      .panel {
+        border: 1px solid #d5dce7;
+        border-radius: 8px;
+        background: #ffffff;
+        padding: 16px;
+      }
+
+      label {
+        display: block;
+        margin: 10px 0 5px;
+        color: #334155;
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      input,
+      select,
+      textarea {
+        width: 100%;
+        min-height: 36px;
+        border: 1px solid #c8d1df;
+        border-radius: 6px;
+        background: #ffffff;
+        padding: 7px 9px;
+        color: #172033;
+      }
+
+      textarea {
+        min-height: 82px;
+        resize: vertical;
+      }
+
+      .row {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .row3 {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 14px;
+      }
+
       pre {
         overflow: auto;
-        min-height: 160px;
-        max-height: 360px;
+        min-height: 220px;
+        max-height: 520px;
         margin: 0;
         border-radius: 8px;
-        background: #111827;
-        color: #d1d5db;
+        background: #101827;
+        color: #d5deea;
         padding: 14px;
-        font-size: 13px;
+        font-size: 12px;
+        line-height: 1.45;
         white-space: pre-wrap;
       }
 
-      .status {
-        margin-top: 10px;
+      table {
+        width: 100%;
+        border-collapse: collapse;
         font-size: 13px;
-        color: #4b5563;
+      }
+
+      th,
+      td {
+        border-bottom: 1px solid #e2e8f0;
+        padding: 8px;
+        text-align: left;
+        vertical-align: top;
+      }
+
+      th {
+        color: #475569;
+        font-size: 12px;
+        font-weight: 750;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        background: #edf2f7;
+        padding: 3px 8px;
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .pill.ok {
+        background: #dcfce7;
+        color: #166534;
+      }
+
+      .pill.warn {
+        background: #fef3c7;
+        color: #92400e;
+      }
+
+      @media (max-width: 760px) {
+        header,
+        .row,
+        .row3 {
+          grid-template-columns: 1fr;
+          display: grid;
+        }
       }
     </style>
   </head>
   <body>
-    <main>
-      <h1>Meetler Auth Test</h1>
-      <div class="status" id="sessionStatus"></div>
+    <div id="root"></div>
 
-      <div class="layout">
-        <section>
-          <h2>Password Auth</h2>
-          <label for="email">Email</label>
-          <input id="email" type="email" autocomplete="username" />
+    <script type="text/babel">
+      const { useEffect, useMemo, useState } = React;
 
-          <label for="name">Name</label>
-          <input id="name" type="text" autocomplete="name" />
+      const API = "/api";
+      const initialRange = () => {
+        const from = new Date();
+        from.setMinutes(0, 0, 0);
+        const to = new Date(from.getTime() + 7 * 24 * 60 * 60 * 1000);
+        return { from: toLocalInput(from), to: toLocalInput(to) };
+      };
 
-          <label for="password">Password</label>
-          <input id="password" type="password" autocomplete="current-password" />
+      function toLocalInput(date) {
+        const pad = (n) => String(n).padStart(2, "0");
+        return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(
+          date.getHours(),
+        )}:${pad(date.getMinutes())}`;
+      }
 
-          <div class="buttons">
-            <button id="registerButton" type="button">Register</button>
-            <button id="loginButton" type="button">Login</button>
-            <button id="logoutButton" class="danger" type="button">Logout</button>
-          </div>
-        </section>
-
-        <section>
-          <h2>OAuth Login</h2>
-          <div class="buttons">
-            <a class="button secondary" href="/api/auth/google/login">Google Login</a>
-            <a class="button secondary" href="/api/auth/microsoft/login">Microsoft Login</a>
-          </div>
-        </section>
-
-        <section>
-          <h2>External Calendars</h2>
-          <div class="buttons">
-            <button id="googleCalendarButton" type="button">Connect Google Calendar</button>
-          </div>
-          <div class="status">
-            This uses the access token saved after password login or manual token paste.
-          </div>
-        </section>
-
-        <section>
-          <h2>Tokens</h2>
-          <label for="accessToken">Access token</label>
-          <input id="accessToken" type="text" autocomplete="off" />
-
-          <label for="refreshToken">Refresh token</label>
-          <input id="refreshToken" type="text" autocomplete="off" />
-
-          <div class="buttons">
-            <button id="saveTokensButton" type="button">Save Tokens</button>
-            <button id="clearTokensButton" class="secondary" type="button">Clear</button>
-          </div>
-        </section>
-      </div>
-
-      <section style="margin-top: 16px">
-        <h2>Output</h2>
-        <pre id="output"></pre>
-      </section>
-    </main>
-
-    <script>
-      const accessTokenInput = document.getElementById("accessToken");
-      const refreshTokenInput = document.getElementById("refreshToken");
-      const output = document.getElementById("output");
-      const sessionStatus = document.getElementById("sessionStatus");
+      function toOffset(value) {
+        if (!value) return "";
+        return new Date(value).toISOString();
+      }
 
       function setCookie(name, value) {
         document.cookie = `${name}=${encodeURIComponent(value || "")}; Path=/; SameSite=Lax`;
@@ -199,135 +288,589 @@
         document.cookie = `${name}=; Path=/; Max-Age=0; SameSite=Lax`;
       }
 
-      function saveTokens(tokens) {
-        localStorage.setItem("meetler.accessToken", tokens.accessToken || "");
-        localStorage.setItem("meetler.refreshToken", tokens.refreshToken || "");
-        setCookie("meetler_access_token", tokens.accessToken || "");
-        accessTokenInput.value = tokens.accessToken || "";
-        refreshTokenInput.value = tokens.refreshToken || "";
-        updateSessionStatus();
+      function pretty(value) {
+        return typeof value === "string" ? value : JSON.stringify(value, null, 2);
       }
 
-      function clearTokens() {
-        localStorage.removeItem("meetler.accessToken");
-        localStorage.removeItem("meetler.refreshToken");
-        deleteCookie("meetler_access_token");
-        accessTokenInput.value = "";
-        refreshTokenInput.value = "";
-        updateSessionStatus();
+      function Field({ label, value, onChange, type = "text", placeholder, children }) {
+        return (
+          <label>
+            {label}
+            {children || (
+              <input
+                type={type}
+                value={value ?? ""}
+                placeholder={placeholder || ""}
+                onChange={(e) => onChange(e.target.value)}
+              />
+            )}
+          </label>
+        );
       }
 
-      function loadTokens() {
-        accessTokenInput.value = localStorage.getItem("meetler.accessToken") || "";
-        refreshTokenInput.value = localStorage.getItem("meetler.refreshToken") || "";
-        setCookie("meetler_access_token", accessTokenInput.value);
-        updateSessionStatus();
+      function SelectField({ label, value, onChange, options }) {
+        return (
+          <label>
+            {label}
+            <select value={value ?? ""} onChange={(e) => onChange(e.target.value)}>
+              {options.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        );
       }
 
-      function updateSessionStatus() {
-        const hasToken = Boolean(localStorage.getItem("meetler.accessToken"));
-        sessionStatus.textContent = hasToken ? "Access token saved." : "No access token saved.";
-      }
+      function App() {
+        const [tab, setTab] = useState("auth");
+        const [output, setOutput] = useState("");
+        const [busy, setBusy] = useState(false);
+        const [accessToken, setAccessToken] = useState("");
+        const [refreshToken, setRefreshToken] = useState("");
+        const [calendars, setCalendars] = useState([]);
+        const [templates, setTemplates] = useState([]);
+        const [groupsOutput, setGroupsOutput] = useState(null);
+        const [gridRows, setGridRows] = useState([]);
 
-      function write(value) {
-        output.textContent =
-          typeof value === "string" ? value : JSON.stringify(value, null, 2);
-      }
-
-      async function request(path, options = {}) {
-        const response = await fetch(path, {
-          ...options,
-          headers: {
-            "Content-Type": "application/json",
-            ...(options.headers || {}),
-          },
+        const [auth, setAuth] = useState({ email: "", name: "", password: "" });
+        const [calendarForm, setCalendarForm] = useState({
+          name: "Internal calendar",
+          provider: "INTERNAL",
+          color: "#4f46e5",
+          externalId: "",
+          syncDirection: "NONE",
         });
+        const [templateForm, setTemplateForm] = useState({
+          name: "Default availability",
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Warsaw",
+          isDefault: true,
+        });
+        const [templateId, setTemplateId] = useState("");
+        const [blockForm, setBlockForm] = useState({
+          startsAt: initialRange().from,
+          endsAt: toLocalInput(new Date(new Date().setHours(new Date().getHours() + 1))),
+          status: "AVAILABLE",
+          note: "",
+        });
+        const [recurringForm, setRecurringForm] = useState({
+          frequency: "WEEKLY",
+          intervalCount: 1,
+          occurrenceCount: "",
+          dayOfWeek: "MONDAY",
+          dayOfMonth: 1,
+          monthOfYear: 1,
+          startTime: "09:00:00",
+          endTime: "17:00:00",
+          status: "AVAILABLE",
+          startsOn: "",
+          endsOn: "",
+          note: "",
+        });
+        const [sourceCalendarId, setSourceCalendarId] = useState("");
+        const [groupForm, setGroupForm] = useState({ groupName: "Weekend plans", groupId: "", inviteCode: "" });
+        const [range, setRange] = useState(initialRange());
 
-        const text = await response.text();
-        const body = text ? JSON.parse(text) : null;
+        const hasToken = Boolean(accessToken);
 
-        if (!response.ok) {
-          throw body || { status: response.status, message: response.statusText };
+        useEffect(() => {
+          const savedAccess = localStorage.getItem("meetler.accessToken") || "";
+          const savedRefresh = localStorage.getItem("meetler.refreshToken") || "";
+          setAccessToken(savedAccess);
+          setRefreshToken(savedRefresh);
+          setCookie("meetler_access_token", savedAccess);
+        }, []);
+
+        function saveTokens(tokens) {
+          const nextAccess = tokens.accessToken || "";
+          const nextRefresh = tokens.refreshToken || "";
+          localStorage.setItem("meetler.accessToken", nextAccess);
+          localStorage.setItem("meetler.refreshToken", nextRefresh);
+          setCookie("meetler_access_token", nextAccess);
+          setAccessToken(nextAccess);
+          setRefreshToken(nextRefresh);
         }
 
-        return body;
-      }
-
-      document.getElementById("registerButton").addEventListener("click", async () => {
-        try {
-          const body = {
-            email: document.getElementById("email").value,
-            name: document.getElementById("name").value,
-            password: document.getElementById("password").value,
-          };
-          const tokens = await request("/api/auth/register", {
-            method: "POST",
-            body: JSON.stringify(body),
-          });
-          saveTokens(tokens);
-          write(tokens);
-        } catch (error) {
-          write(error);
+        function clearTokens() {
+          localStorage.removeItem("meetler.accessToken");
+          localStorage.removeItem("meetler.refreshToken");
+          deleteCookie("meetler_access_token");
+          setAccessToken("");
+          setRefreshToken("");
         }
-      });
 
-      document.getElementById("loginButton").addEventListener("click", async () => {
-        try {
-          const body = {
-            email: document.getElementById("email").value,
-            password: document.getElementById("password").value,
-          };
-          const tokens = await request("/api/auth/login", {
-            method: "POST",
-            body: JSON.stringify(body),
-          });
-          saveTokens(tokens);
-          write(tokens);
-        } catch (error) {
-          write(error);
-        }
-      });
-
-      document.getElementById("logoutButton").addEventListener("click", async () => {
-        try {
-          const refreshToken = localStorage.getItem("meetler.refreshToken");
-          if (refreshToken) {
-            await request("/api/auth/logout", {
-              method: "POST",
-              body: JSON.stringify({ refreshToken }),
+        async function api(path, options = {}) {
+          setBusy(true);
+          try {
+            const token = localStorage.getItem("meetler.accessToken") || accessToken;
+            const response = await fetch(`${API}${path}`, {
+              ...options,
+              headers: {
+                ...(options.body ? { "Content-Type": "application/json" } : {}),
+                ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                ...(options.headers || {}),
+              },
             });
+            const text = await response.text();
+            const body = text ? JSON.parse(text) : null;
+            if (!response.ok) throw body || { status: response.status, message: response.statusText };
+            setOutput(pretty(body ?? "OK"));
+            return body;
+          } catch (error) {
+            setOutput(pretty(error));
+            throw error;
+          } finally {
+            setBusy(false);
           }
-          clearTokens();
-          write("Logged out.");
-        } catch (error) {
-          write(error);
         }
-      });
 
-      document.getElementById("saveTokensButton").addEventListener("click", () => {
-        saveTokens({
-          accessToken: accessTokenInput.value,
-          refreshToken: refreshTokenInput.value,
-        });
-        write("Tokens saved.");
-      });
-
-      document.getElementById("clearTokensButton").addEventListener("click", () => {
-        clearTokens();
-        write("Tokens cleared.");
-      });
-
-      document.getElementById("googleCalendarButton").addEventListener("click", () => {
-        const accessToken = localStorage.getItem("meetler.accessToken");
-        if (!accessToken) {
-          write("Login first, or paste and save an access token.");
-          return;
+        async function refreshCalendars() {
+          const data = await api("/calendars");
+          setCalendars(data || []);
+          return data || [];
         }
-        setCookie("meetler_access_token", accessToken);
-        window.location.href = "/api/external-calendars/google/connect";
-      });
 
-      loadTokens();
+        async function refreshTemplates() {
+          const data = await api("/availability/templates?page=0");
+          const items = data?.content || data || [];
+          setTemplates(items);
+          if (!templateId && items.length) setTemplateId(items[0].id);
+          return items;
+        }
+
+        const templateOptions = [{ value: "", label: "Select template" }].concat(
+          templates.map((template) => ({
+            value: template.id,
+            label: `${template.name} (${template.timezone})`,
+          })),
+        );
+
+        const calendarOptions = [{ value: "", label: "Select calendar" }].concat(
+          calendars.map((calendar) => ({
+            value: calendar.id,
+            label: `${calendar.name} [${calendar.provider}]`,
+          })),
+        );
+
+        function AuthTab() {
+          return (
+            <div className="grid">
+              <section>
+                <h2>Password Auth</h2>
+                <Field label="Email" value={auth.email} onChange={(email) => setAuth({ ...auth, email })} />
+                <Field label="Name" value={auth.name} onChange={(name) => setAuth({ ...auth, name })} />
+                <Field
+                  label="Password"
+                  type="password"
+                  value={auth.password}
+                  onChange={(password) => setAuth({ ...auth, password })}
+                />
+                <div className="actions">
+                  <button
+                    disabled={busy}
+                    onClick={async () => saveTokens(await api("/auth/register", {
+                      method: "POST",
+                      body: JSON.stringify(auth),
+                    }))}
+                  >
+                    Register
+                  </button>
+                  <button
+                    disabled={busy}
+                    onClick={async () => saveTokens(await api("/auth/login", {
+                      method: "POST",
+                      body: JSON.stringify({ email: auth.email, password: auth.password }),
+                    }))}
+                  >
+                    Login
+                  </button>
+                  <button
+                    className="danger"
+                    disabled={busy}
+                    onClick={async () => {
+                      if (refreshToken) {
+                        await api("/auth/logout", {
+                          method: "POST",
+                          body: JSON.stringify({ refreshToken }),
+                        });
+                      }
+                      clearTokens();
+                      setOutput("Logged out.");
+                    }}
+                  >
+                    Logout
+                  </button>
+                </div>
+              </section>
+
+              <section>
+                <h2>OAuth Login</h2>
+                <div className="actions">
+                  <a className="button secondary" href="/api/auth/google/login">Google Login</a>
+                  <a className="button secondary" href="/api/auth/microsoft/login">Microsoft Login</a>
+                </div>
+                <p className="muted">OAuth login may return JSON directly from the backend. Paste the tokens below if needed.</p>
+              </section>
+
+              <section className="wide">
+                <h2>Tokens</h2>
+                <Field label="Access token" value={accessToken} onChange={setAccessToken} />
+                <Field label="Refresh token" value={refreshToken} onChange={setRefreshToken} />
+                <div className="actions">
+                  <button onClick={() => { saveTokens({ accessToken, refreshToken }); setOutput("Tokens saved."); }}>
+                    Save Tokens
+                  </button>
+                  <button className="secondary" onClick={() => { clearTokens(); setOutput("Tokens cleared."); }}>
+                    Clear Tokens
+                  </button>
+                </div>
+              </section>
+            </div>
+          );
+        }
+
+        function CalendarsTab() {
+          return (
+            <div className="grid">
+              <section>
+                <h2>External Calendar OAuth</h2>
+                <div className="row">
+                  <Field label="Import from" type="datetime-local" value={range.from} onChange={(from) => setRange({ ...range, from })} />
+                  <Field label="Import to" type="datetime-local" value={range.to} onChange={(to) => setRange({ ...range, to })} />
+                </div>
+                <div className="actions">
+                  <button
+                    onClick={() => {
+                      if (!accessToken) return setOutput("Login first, or paste and save an access token.");
+                      setCookie("meetler_access_token", accessToken);
+                      window.location.href = "/api/external-calendars/google/connect";
+                    }}
+                  >
+                    Connect Google Calendar
+                  </button>
+                  <button
+                    disabled={busy}
+                    onClick={() => api(`/external-calendars/google/import?from=${encodeURIComponent(toOffset(range.from))}&to=${encodeURIComponent(toOffset(range.to))}`, { method: "POST" })}
+                  >
+                    Import Google Events
+                  </button>
+                </div>
+              </section>
+
+              <section>
+                <h2>Create Calendar</h2>
+                <Field label="Name" value={calendarForm.name} onChange={(name) => setCalendarForm({ ...calendarForm, name })} />
+                <SelectField
+                  label="Provider"
+                  value={calendarForm.provider}
+                  onChange={(provider) => setCalendarForm({ ...calendarForm, provider })}
+                  options={[
+                    { value: "INTERNAL", label: "INTERNAL" },
+                    { value: "GOOGLE", label: "GOOGLE" },
+                    { value: "TEAMS", label: "TEAMS" },
+                  ]}
+                />
+                <div className="row">
+                  <Field label="Color" value={calendarForm.color} onChange={(color) => setCalendarForm({ ...calendarForm, color })} />
+                  <SelectField
+                    label="Sync direction"
+                    value={calendarForm.syncDirection}
+                    onChange={(syncDirection) => setCalendarForm({ ...calendarForm, syncDirection })}
+                    options={["NONE", "TO_PROVIDER", "FROM_PROVIDER", "BIDIRECTIONAL"].map((value) => ({ value, label: value }))}
+                  />
+                </div>
+                <Field label="External ID" value={calendarForm.externalId} onChange={(externalId) => setCalendarForm({ ...calendarForm, externalId })} />
+                <div className="actions">
+                  <button disabled={busy} onClick={() => api("/calendars", { method: "POST", body: JSON.stringify(calendarForm) }).then(refreshCalendars)}>
+                    Create Calendar
+                  </button>
+                  <button className="secondary" disabled={busy} onClick={refreshCalendars}>List Calendars</button>
+                </div>
+              </section>
+
+              <section className="wide">
+                <h2>Calendars</h2>
+                <DataTable rows={calendars} columns={["id", "name", "provider", "externalId", "syncDirection"]} />
+              </section>
+            </div>
+          );
+        }
+
+        function AvailabilityTab() {
+          return (
+            <div className="grid">
+              <section>
+                <h2>Templates</h2>
+                <Field label="Name" value={templateForm.name} onChange={(name) => setTemplateForm({ ...templateForm, name })} />
+                <Field label="Timezone" value={templateForm.timezone} onChange={(timezone) => setTemplateForm({ ...templateForm, timezone })} />
+                <SelectField
+                  label="Default"
+                  value={String(templateForm.isDefault)}
+                  onChange={(value) => setTemplateForm({ ...templateForm, isDefault: value === "true" })}
+                  options={[{ value: "true", label: "true" }, { value: "false", label: "false" }]}
+                />
+                <div className="actions">
+                  <button disabled={busy} onClick={() => api("/availability/templates", { method: "POST", body: JSON.stringify(templateForm) }).then(refreshTemplates)}>
+                    Create Template
+                  </button>
+                  <button className="secondary" disabled={busy} onClick={refreshTemplates}>List Templates</button>
+                </div>
+              </section>
+
+              <section>
+                <h2>Active Template</h2>
+                <SelectField label="Template" value={templateId} onChange={setTemplateId} options={templateOptions} />
+                <div className="actions">
+                  <button className="secondary" disabled={!templateId || busy} onClick={() => api(`/availability/templates/${templateId}`)}>Get</button>
+                  <button className="secondary" disabled={!templateId || busy} onClick={() => api(`/availability/templates/${templateId}/blocks?page=0`)}>List Blocks</button>
+                  <button className="secondary" disabled={!templateId || busy} onClick={() => api(`/availability/templates/${templateId}/recurring-blocks?page=0`)}>List Recurring</button>
+                </div>
+              </section>
+
+              <section>
+                <h2>One-Off Block</h2>
+                <div className="row">
+                  <Field label="Starts at" type="datetime-local" value={blockForm.startsAt} onChange={(startsAt) => setBlockForm({ ...blockForm, startsAt })} />
+                  <Field label="Ends at" type="datetime-local" value={blockForm.endsAt} onChange={(endsAt) => setBlockForm({ ...blockForm, endsAt })} />
+                </div>
+                <SelectField label="Status" value={blockForm.status} onChange={(status) => setBlockForm({ ...blockForm, status })} options={["AVAILABLE", "BUSY"].map((value) => ({ value, label: value }))} />
+                <Field label="Note" value={blockForm.note} onChange={(note) => setBlockForm({ ...blockForm, note })} />
+                <button disabled={!templateId || busy} onClick={() => api(`/availability/templates/${templateId}/blocks`, {
+                  method: "POST",
+                  body: JSON.stringify({
+                    startsAt: toOffset(blockForm.startsAt),
+                    endsAt: toOffset(blockForm.endsAt),
+                    status: blockForm.status,
+                    note: blockForm.note || null,
+                  }),
+                })}>
+                  Add Block
+                </button>
+              </section>
+
+              <section>
+                <h2>Recurring Block</h2>
+                <div className="row">
+                  <SelectField label="Frequency" value={recurringForm.frequency} onChange={(frequency) => setRecurringForm({ ...recurringForm, frequency })} options={["DAILY", "WEEKLY", "MONTHLY", "YEARLY"].map((value) => ({ value, label: value }))} />
+                  <SelectField label="Status" value={recurringForm.status} onChange={(status) => setRecurringForm({ ...recurringForm, status })} options={["AVAILABLE", "BUSY"].map((value) => ({ value, label: value }))} />
+                </div>
+                <div className="row3">
+                  <Field label="Interval" type="number" value={recurringForm.intervalCount} onChange={(intervalCount) => setRecurringForm({ ...recurringForm, intervalCount })} />
+                  <Field label="Occurrences" type="number" value={recurringForm.occurrenceCount} onChange={(occurrenceCount) => setRecurringForm({ ...recurringForm, occurrenceCount })} />
+                  <SelectField label="Day of week" value={recurringForm.dayOfWeek} onChange={(dayOfWeek) => setRecurringForm({ ...recurringForm, dayOfWeek })} options={["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"].map((value) => ({ value, label: value }))} />
+                </div>
+                <div className="row">
+                  <Field label="Day of month" type="number" value={recurringForm.dayOfMonth} onChange={(dayOfMonth) => setRecurringForm({ ...recurringForm, dayOfMonth })} />
+                  <Field label="Month of year" type="number" value={recurringForm.monthOfYear} onChange={(monthOfYear) => setRecurringForm({ ...recurringForm, monthOfYear })} />
+                </div>
+                <div className="row">
+                  <Field label="Start time" value={recurringForm.startTime} onChange={(startTime) => setRecurringForm({ ...recurringForm, startTime })} />
+                  <Field label="End time" value={recurringForm.endTime} onChange={(endTime) => setRecurringForm({ ...recurringForm, endTime })} />
+                </div>
+                <div className="row">
+                  <Field label="Starts on" type="date" value={recurringForm.startsOn} onChange={(startsOn) => setRecurringForm({ ...recurringForm, startsOn })} />
+                  <Field label="Ends on" type="date" value={recurringForm.endsOn} onChange={(endsOn) => setRecurringForm({ ...recurringForm, endsOn })} />
+                </div>
+                <button disabled={!templateId || busy} onClick={() => api(`/availability/templates/${templateId}/recurring-blocks`, {
+                  method: "POST",
+                  body: JSON.stringify(cleanRecurring(recurringForm)),
+                })}>
+                  Add Recurring
+                </button>
+              </section>
+
+              <section>
+                <h2>Source Calendars</h2>
+                <SelectField label="Calendar" value={sourceCalendarId} onChange={setSourceCalendarId} options={calendarOptions} />
+                <div className="actions">
+                  <button disabled={!templateId || !sourceCalendarId || busy} onClick={() => api(`/availability/templates/${templateId}/source-calendars`, {
+                    method: "POST",
+                    body: JSON.stringify({ calendarId: sourceCalendarId, includeBusyEvents: true }),
+                  })}>
+                    Attach Source
+                  </button>
+                  <button className="secondary" disabled={!templateId || busy} onClick={() => api(`/availability/templates/${templateId}/source-calendars`)}>
+                    List Sources
+                  </button>
+                </div>
+              </section>
+
+              <section>
+                <h2>Resolve Template</h2>
+                <div className="row">
+                  <Field label="From" type="datetime-local" value={range.from} onChange={(from) => setRange({ ...range, from })} />
+                  <Field label="To" type="datetime-local" value={range.to} onChange={(to) => setRange({ ...range, to })} />
+                </div>
+                <button disabled={!templateId || busy} onClick={() => api(`/availability/templates/${templateId}/resolved?from=${encodeURIComponent(toOffset(range.from))}&to=${encodeURIComponent(toOffset(range.to))}`)}>
+                  Resolve
+                </button>
+              </section>
+            </div>
+          );
+        }
+
+        function GroupsTab() {
+          return (
+            <div className="grid">
+              <section>
+                <h2>Groups</h2>
+                <Field label="Group name" value={groupForm.groupName} onChange={(groupName) => setGroupForm({ ...groupForm, groupName })} />
+                <Field label="Group ID" value={groupForm.groupId} onChange={(groupId) => setGroupForm({ ...groupForm, groupId })} />
+                <div className="actions">
+                  <button disabled={busy} onClick={async () => {
+                    const data = await api("/groups", { method: "POST", body: JSON.stringify({ name: groupForm.groupName }) });
+                    setGroupForm({ ...groupForm, groupId: data.id });
+                  }}>
+                    Create Group
+                  </button>
+                  <button className="secondary" disabled={!groupForm.groupId || busy} onClick={() => api(`/groups/${groupForm.groupId}/members`)}>
+                    List Members
+                  </button>
+                </div>
+              </section>
+
+              <section>
+                <h2>Invites</h2>
+                <Field label="Invite code" value={groupForm.inviteCode} onChange={(inviteCode) => setGroupForm({ ...groupForm, inviteCode })} />
+                <div className="actions">
+                  <button disabled={!groupForm.groupId || busy} onClick={async () => {
+                    const data = await api(`/invites/${groupForm.groupId}`, {
+                      method: "POST",
+                      body: JSON.stringify({ maxUses: 10 }),
+                    });
+                    setGroupForm({ ...groupForm, inviteCode: data.code });
+                  }}>
+                    Create Invite
+                  </button>
+                  <button className="secondary" disabled={!groupForm.inviteCode || busy} onClick={() => api(`/invites/join/${groupForm.inviteCode}`, { method: "POST" })}>
+                    Join by Code
+                  </button>
+                </div>
+              </section>
+
+              <section>
+                <h2>Group Availability Template</h2>
+                <SelectField label="Template" value={templateId} onChange={setTemplateId} options={templateOptions} />
+                <div className="actions">
+                  <button disabled={!groupForm.groupId || !templateId || busy} onClick={() => api(`/groups/${groupForm.groupId}/members/me/availability-template`, {
+                    method: "POST",
+                    body: JSON.stringify({ availabilityTemplateId: templateId }),
+                  })}>
+                    Use Template
+                  </button>
+                  <button className="secondary" disabled={!groupForm.groupId || busy} onClick={() => api(`/groups/${groupForm.groupId}/members/me/availability-template`)}>
+                    Get Selection
+                  </button>
+                  <button className="secondary" disabled={!groupForm.groupId || busy} onClick={() => api(`/groups/${groupForm.groupId}/members/me/availability-template`, { method: "DELETE" })}>
+                    Clear
+                  </button>
+                </div>
+              </section>
+
+              <section>
+                <h2>15-Minute Grid</h2>
+                <div className="row">
+                  <Field label="From" type="datetime-local" value={range.from} onChange={(from) => setRange({ ...range, from })} />
+                  <Field label="To" type="datetime-local" value={range.to} onChange={(to) => setRange({ ...range, to })} />
+                </div>
+                <button disabled={!groupForm.groupId || busy} onClick={async () => {
+                  const data = await api(`/groups/${groupForm.groupId}/availability-grid?from=${encodeURIComponent(toOffset(range.from))}&to=${encodeURIComponent(toOffset(range.to))}`);
+                  setGridRows(data || []);
+                }}>
+                  Build Grid
+                </button>
+              </section>
+
+              <section className="wide">
+                <h2>Grid Results</h2>
+                <DataTable rows={gridRows.slice(0, 100)} columns={["startsAt", "endsAt", "availableCount", "busyCount", "unavailableCount", "noTemplateCount"]} />
+              </section>
+            </div>
+          );
+        }
+
+        function cleanRecurring(form) {
+          const payload = {
+            frequency: form.frequency,
+            intervalCount: Number(form.intervalCount || 1),
+            occurrenceCount: form.occurrenceCount ? Number(form.occurrenceCount) : null,
+            startTime: form.startTime,
+            endTime: form.endTime,
+            status: form.status,
+            note: form.note || null,
+            startsOn: form.startsOn || null,
+            endsOn: form.endsOn || null,
+          };
+          if (form.frequency === "WEEKLY") payload.dayOfWeek = form.dayOfWeek;
+          if (form.frequency === "MONTHLY") payload.dayOfMonth = Number(form.dayOfMonth);
+          if (form.frequency === "YEARLY") {
+            payload.dayOfMonth = Number(form.dayOfMonth);
+            payload.monthOfYear = Number(form.monthOfYear);
+          }
+          return payload;
+        }
+
+        function DataTable({ rows, columns }) {
+          if (!rows?.length) return <p className="muted">No rows loaded.</p>;
+          return (
+            <table>
+              <thead>
+                <tr>{columns.map((column) => <th key={column}>{column}</th>)}</tr>
+              </thead>
+              <tbody>
+                {rows.map((row, index) => (
+                  <tr key={row.id || `${row.startsAt}-${index}`}>
+                    {columns.map((column) => (
+                      <td key={column}>{Array.isArray(row[column]) ? row[column].join(", ") : String(row[column] ?? "")}</td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          );
+        }
+
+        return (
+          <div className="app">
+            <header>
+              <div>
+                <h1>Meetler Test Console</h1>
+                <div className="muted">Static nginx playground for backend API workflows.</div>
+              </div>
+              <div className="status">
+                <div><span className={`pill ${hasToken ? "ok" : "warn"}`}>{hasToken ? "Token saved" : "No token"}</span></div>
+                <div style={{ marginTop: 8 }}>API proxy: <strong>/api</strong></div>
+              </div>
+            </header>
+
+            <nav className="tabs">
+              {[
+                ["auth", "Auth"],
+                ["calendars", "Calendars"],
+                ["availability", "Availability"],
+                ["groups", "Groups"],
+              ].map(([id, label]) => (
+                <button key={id} className={tab === id ? "active" : ""} onClick={() => setTab(id)}>
+                  {label}
+                </button>
+              ))}
+            </nav>
+
+            {tab === "auth" && AuthTab()}
+            {tab === "calendars" && CalendarsTab()}
+            {tab === "availability" && AvailabilityTab()}
+            {tab === "groups" && GroupsTab()}
+
+            <section className="wide" style={{ marginTop: 14 }}>
+              <h2>Output</h2>
+              <pre>{output}</pre>
+            </section>
+          </div>
+        );
+      }
+
+      ReactDOM.createRoot(document.getElementById("root")).render(<App />);
     </script>
   </body>
 </html>

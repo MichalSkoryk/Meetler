@@ -1,5 +1,6 @@
 package com.skoryk.projects.meetler.group.member;
 
+import com.skoryk.projects.meetler.availability.model.AvailabilityTemplate;
 import com.skoryk.projects.meetler.group.Group;
 import com.skoryk.projects.meetler.user.AppUser;
 import jakarta.persistence.*;
@@ -32,4 +33,8 @@ public class GroupMember {
 
   @Column(nullable = false)
   private OffsetDateTime joinedAt;
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "availability_template_id")
+  private AvailabilityTemplate availabilityTemplate;
 }

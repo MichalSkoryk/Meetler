@@ -1,4 +1,4 @@
-package com.skoryk.projects.meetler.availability;
+package com.skoryk.projects.meetler.availability.model;
 
 import com.skoryk.projects.meetler.user.AppUser;
 import jakarta.persistence.*;
@@ -40,3 +40,5 @@ public class AvailabilityTemplate {
   @Column(name = "updated_at", nullable = false)
   private OffsetDateTime updatedAt;
 }
+
+

@@ -1,15 +1,24 @@
-package com.skoryk.projects.meetler.availability;
+package com.skoryk.projects.meetler.availability.service;
 
 import com.skoryk.projects.meetler.availability.dto.*;
+import com.skoryk.projects.meetler.availability.model.*;
+import com.skoryk.projects.meetler.availability.repository.*;
+import com.skoryk.projects.meetler.availability.resolver.AvailabilityTemplateResolver;
 import com.skoryk.projects.meetler.calendar.Calendar;
 import com.skoryk.projects.meetler.calendar.CalendarRepository;
 import com.skoryk.projects.meetler.user.AppUser;
 import java.time.DateTimeException;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.MonthDay;
 import java.time.OffsetDateTime;
+import java.time.YearMonth;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -24,12 +33,14 @@ import org.springframework.transaction.annotation.Transactional;
 public class AvailabilityTemplateService {
 
   private static final int AVAILABILITY_PAGE_SIZE = 50;
+  private static final int MAX_RESOLUTION_DAYS = 366;
 
   private final AvailabilityTemplateRepository templateRepository;
   private final AvailabilityTemplateBlockRepository blockRepository;
   private final AvailabilityTemplateRecurringBlockRepository recurringBlockRepository;
   private final AvailabilityTemplateSourceCalendarRepository sourceCalendarRepository;
   private final CalendarRepository calendarRepository;
+  private final AvailabilityTemplateResolver resolver;
 
   @Transactional
   public AvailabilityTemplateResponse createTemplate(
@@ -49,12 +60,6 @@ public class AvailabilityTemplateService {
             .build();
 
     return toTemplateResponse(templateRepository.save(template));
-  }
-
-  public List<AvailabilityTemplateResponse> getUserTemplates(AppUser user) {
-    return templateRepository.findByUserOrderByCreatedAtDesc(user).stream()
-        .map(this::toTemplateResponse)
-        .toList();
   }
 
   public Page<AvailabilityTemplateResponse> getUserTemplates(AppUser user, int page) {
@@ -233,6 +238,15 @@ public class AvailabilityTemplateService {
         .map(this::toRecurringBlockResponse);
   }
 
+  public List<ResolvedAvailabilityWindowResponse> resolveTemplateAvailability(
+      UUID templateId, AppUser user, OffsetDateTime from, OffsetDateTime to) {
+    validateRequiredResolutionRange(from, to);
+
+    AvailabilityTemplate template = getOwnedTemplate(templateId, user);
+
+    return resolver.resolve(template, from, to);
+  }
+
   @Transactional
   public void deleteRecurringBlock(UUID templateId, UUID blockId, AppUser user) {
     AvailabilityTemplate template = getOwnedTemplate(templateId, user);
@@ -321,6 +335,17 @@ public class AvailabilityTemplateService {
   private void validateLocalDateRange(LocalDate from, LocalDate to) {
     if (from != null && to != null && to.isBefore(from)) {
       throw new IllegalArgumentException("Range end date must not be before range start date");
+    }
+  }
+
+  private void validateRequiredResolutionRange(OffsetDateTime from, OffsetDateTime to) {
+    if (from == null || to == null) {
+      throw new IllegalArgumentException("Resolution range requires from and to");
+    }
+    validateOffsetDateRange(from, to);
+    if (Duration.between(from, to).toDays() > MAX_RESOLUTION_DAYS) {
+      throw new IllegalArgumentException(
+          "Resolution range must not be longer than " + MAX_RESOLUTION_DAYS + " days");
     }
   }
 
@@ -506,3 +531,5 @@ public class AvailabilityTemplateService {
         .build();
   }
 }
+
+

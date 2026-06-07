@@ -1,4 +1,4 @@
-package com.skoryk.projects.meetler.availability;
+package com.skoryk.projects.meetler.availability.api;
 
 import com.skoryk.projects.meetler.availability.dto.AddAvailabilityBlockRequest;
 import com.skoryk.projects.meetler.availability.dto.AddRecurringAvailabilityBlockRequest;
@@ -8,9 +8,11 @@ import com.skoryk.projects.meetler.availability.dto.AvailabilityTemplateResponse
 import com.skoryk.projects.meetler.availability.dto.ConvertAvailabilityBlockToRecurringRequest;
 import com.skoryk.projects.meetler.availability.dto.CreateAvailabilityTemplateRequest;
 import com.skoryk.projects.meetler.availability.dto.RecurringAvailabilityBlockResponse;
+import com.skoryk.projects.meetler.availability.dto.ResolvedAvailabilityWindowResponse;
 import com.skoryk.projects.meetler.availability.dto.SourceCalendarResponse;
 import com.skoryk.projects.meetler.availability.dto.UpdateAvailabilityBlockRequest;
 import com.skoryk.projects.meetler.availability.dto.UpdateAvailabilityTemplateRequest;
+import com.skoryk.projects.meetler.availability.service.AvailabilityTemplateService;
 import com.skoryk.projects.meetler.user.AppUser;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
@@ -41,6 +43,13 @@ public class AvailabilityTemplateController implements AvailabilityTemplateApi {
   @Override
   public ResponseEntity<AvailabilityTemplateResponse> getTemplate(UUID templateId, AppUser user) {
     return ResponseEntity.ok(availabilityTemplateService.getTemplate(templateId, user));
+  }
+
+  @Override
+  public ResponseEntity<List<ResolvedAvailabilityWindowResponse>> resolveTemplateAvailability(
+      UUID templateId, OffsetDateTime from, OffsetDateTime to, AppUser user) {
+    return ResponseEntity.ok(
+        availabilityTemplateService.resolveTemplateAvailability(templateId, user, from, to));
   }
 
   @Override
@@ -130,3 +139,5 @@ public class AvailabilityTemplateController implements AvailabilityTemplateApi {
     return ResponseEntity.noContent().build();
   }
 }
+
+
