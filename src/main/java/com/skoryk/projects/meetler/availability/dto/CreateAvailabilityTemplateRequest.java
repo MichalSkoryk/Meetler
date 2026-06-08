@@ -1,5 +1,6 @@
 package com.skoryk.projects.meetler.availability.dto;
 
+import com.skoryk.projects.meetler.availability.model.AvailabilityBlockStatus;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -17,4 +18,6 @@ public class CreateAvailabilityTemplateRequest {
   @NotBlank
   @Size(max = 64)
   private String timezone;
+
+  private AvailabilityBlockStatus defaultAvailabilityStatus = AvailabilityBlockStatus.BUSY;
 }

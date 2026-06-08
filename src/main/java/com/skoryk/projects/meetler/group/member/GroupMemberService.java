@@ -5,6 +5,7 @@ import com.skoryk.projects.meetler.availability.repository.AvailabilityTemplateR
 import com.skoryk.projects.meetler.group.Group;
 import com.skoryk.projects.meetler.group.GroupRepository;
 import com.skoryk.projects.meetler.group.member.dto.GroupAvailabilityTemplateResponse;
+import com.skoryk.projects.meetler.group.member.dto.GroupMemberResponse;
 import com.skoryk.projects.meetler.user.AppUser;
 import jakarta.transaction.Transactional;
 import java.time.OffsetDateTime;
@@ -61,13 +62,14 @@ public class GroupMemberService {
     memberRepository.delete(member);
   }
 
-  public List<GroupMember> getGroupMembers(UUID groupId) {
+  @Transactional
+  public List<GroupMemberResponse> getGroupMembers(UUID groupId) {
     Group group =
         groupRepository
             .findById(groupId)
             .orElseThrow(() -> new IllegalArgumentException("Group not found"));
 
-    return memberRepository.findByGroup(group);
+    return memberRepository.findByGroup(group).stream().map(this::toMemberResponse).toList();
   }
 
   @Transactional
@@ -108,6 +110,21 @@ public class GroupMemberService {
         .availabilityTemplateId(template == null ? null : template.getId())
         .availabilityTemplateName(template == null ? null : template.getName())
         .timezone(template == null ? null : template.getTimezone())
+        .build();
+  }
+
+  private GroupMemberResponse toMemberResponse(GroupMember member) {
+    AppUser user = member.getUser();
+    AvailabilityTemplate template = member.getAvailabilityTemplate();
+    return GroupMemberResponse.builder()
+        .id(member.getId())
+        .userId(user.getId())
+        .userName(user.getName())
+        .userEmail(user.getEmail())
+        .role(member.getRole().name())
+        .joinedAt(member.getJoinedAt())
+        .availabilityTemplateId(template == null ? null : template.getId())
+        .availabilityTemplateName(template == null ? null : template.getName())
         .build();
   }
 }

@@ -32,6 +32,10 @@ public class AvailabilityTemplate {
   @Column(name = "is_default", nullable = false)
   private boolean isDefault;
 
+  @Enumerated(EnumType.STRING)
+  @Column(name = "default_availability_status", nullable = false, length = 32)
+  private AvailabilityBlockStatus defaultAvailabilityStatus;
+
   @CreationTimestamp
   @Column(name = "created_at", nullable = false)
   private OffsetDateTime createdAt;

@@ -14,13 +14,38 @@ import org.springframework.data.jpa.repository.Query;
 public interface AvailabilityTemplateBlockRepository
     extends JpaRepository<AvailabilityTemplateBlock, UUID> {
 
+  Page<AvailabilityTemplateBlock> findByTemplateOrderByStartsAtAsc(
+      AvailabilityTemplate template, Pageable pageable);
+
   @Query(
       """
       select b
       from AvailabilityTemplateBlock b
       where b.template = :template
-        and (:from is null or b.endsAt > :from)
-        and (:to is null or b.startsAt < :to)
+        and b.endsAt > :from
+      order by b.startsAt asc
+      """)
+  Page<AvailabilityTemplateBlock> findByTemplateEndingAfter(
+      AvailabilityTemplate template, OffsetDateTime from, Pageable pageable);
+
+  @Query(
+      """
+      select b
+      from AvailabilityTemplateBlock b
+      where b.template = :template
+        and b.startsAt < :to
+      order by b.startsAt asc
+      """)
+  Page<AvailabilityTemplateBlock> findByTemplateStartingBefore(
+      AvailabilityTemplate template, OffsetDateTime to, Pageable pageable);
+
+  @Query(
+      """
+      select b
+      from AvailabilityTemplateBlock b
+      where b.template = :template
+        and b.endsAt > :from
+        and b.startsAt < :to
       order by b.startsAt asc
       """)
   Page<AvailabilityTemplateBlock> findByTemplateOverlappingRange(

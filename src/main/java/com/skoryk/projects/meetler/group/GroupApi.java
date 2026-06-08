@@ -34,6 +34,13 @@ public interface GroupApi {
       @Valid @RequestBody CreateGroupRequest request, @AuthenticationPrincipal AppUser user);
 
   @Operation(
+      summary = "List my groups",
+      description =
+          "Returns groups where the authenticated user is a member, including their role.")
+  @GetMapping
+  ResponseEntity<List<GroupResponse>> getMyGroups(@AuthenticationPrincipal AppUser user);
+
+  @Operation(
       summary = "Update a group",
       description =
           "Updates group metadata. The authenticated user must be allowed to manage the group.")
@@ -54,7 +61,7 @@ public interface GroupApi {
       summary = "Get group availability grid",
       description =
           "Returns 15-minute availability slots for the selected group and date-time range. "
-              + "Each member is counted as available, busy, unavailable, or missing a selected availability template.")
+              + "Each member is counted as available, busy, or missing a selected availability template.")
   @GetMapping("/{groupId}/availability-grid")
   ResponseEntity<List<GroupAvailabilitySlotResponse>> getAvailabilityGrid(
       @PathVariable UUID groupId,

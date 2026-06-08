@@ -43,7 +43,8 @@ public interface AvailabilityTemplateApi {
       summary = "Create an availability template",
       description =
           "Creates a reusable availability template for the authenticated user. "
-              + "If isDefault is true, the user's previous default template is cleared.")
+              + "If isDefault is true, the user's previous default template is cleared. "
+              + "defaultAvailabilityStatus controls whether empty space is AVAILABLE or BUSY.")
   @PostMapping
   ResponseEntity<AvailabilityTemplateResponse> createTemplate(
       @Valid @RequestBody CreateAvailabilityTemplateRequest request,
@@ -81,7 +82,8 @@ public interface AvailabilityTemplateApi {
       summary = "Update an availability template",
       description =
           "Updates the template name, timezone, and default flag. "
-              + "If isDefault is true, the user's previous default template is cleared.")
+              + "If isDefault is true, the user's previous default template is cleared. "
+              + "defaultAvailabilityStatus controls whether empty space is AVAILABLE or BUSY.")
   @PatchMapping("/{templateId}")
   ResponseEntity<AvailabilityTemplateResponse> updateTemplate(
       @PathVariable UUID templateId,

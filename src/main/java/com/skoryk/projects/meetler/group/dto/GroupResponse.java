@@ -10,6 +10,7 @@ import lombok.Data;
 public class GroupResponse {
   private UUID id;
   private String name;
+  private String role;
   private OffsetDateTime createdAt;
   private OffsetDateTime updatedAt;
 }

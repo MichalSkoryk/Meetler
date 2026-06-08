@@ -1,6 +1,5 @@
 package com.skoryk.projects.meetler.calendar.external;
 
-import com.skoryk.projects.meetler.calendar.external.dto.ExternalCalendarAccountResponse;
 import com.skoryk.projects.meetler.calendar.external.dto.ExternalCalendarImportResponse;
 import com.skoryk.projects.meetler.user.AppUser;
 import io.swagger.v3.oas.annotations.Operation;
@@ -22,15 +21,15 @@ public interface ExternalCalendarOAuthApi {
       description =
           "Redirects the authenticated user to Google OAuth consent for calendar synchronization access.")
   @GetMapping("/google/connect")
-  ResponseEntity<Void> connectGoogle(@AuthenticationPrincipal AppUser user);
+  ResponseEntity<Void> connectGoogle(
+      @AuthenticationPrincipal AppUser user, @RequestParam(required = false) String returnUrl);
 
   @Operation(
       summary = "Handle Google Calendar callback",
       description =
           "Completes the Google Calendar OAuth connection and stores the external calendar account tokens.")
   @GetMapping("/google/callback")
-  ResponseEntity<ExternalCalendarAccountResponse> googleCallback(
-      @RequestParam String code, @RequestParam String state);
+  ResponseEntity<Void> googleCallback(@RequestParam String code, @RequestParam String state);
 
   @Operation(
       summary = "Import Google calendars and events",

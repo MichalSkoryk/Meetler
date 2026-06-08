@@ -1,12 +1,14 @@
 package com.skoryk.projects.meetler.group.member;
 
 import com.skoryk.projects.meetler.group.member.dto.GroupAvailabilityTemplateResponse;
+import com.skoryk.projects.meetler.group.member.dto.GroupMemberResponse;
 import com.skoryk.projects.meetler.group.member.dto.SelectGroupAvailabilityTemplateRequest;
 import com.skoryk.projects.meetler.user.AppUser;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -46,7 +48,7 @@ public interface GroupMemberApi {
       summary = "List group members",
       description = "Returns the members and roles for the selected group.")
   @GetMapping
-  ResponseEntity<?> listMembers(@PathVariable UUID groupId);
+  ResponseEntity<List<GroupMemberResponse>> listMembers(@PathVariable UUID groupId);
 
   @Operation(
       summary = "Get my group availability template",

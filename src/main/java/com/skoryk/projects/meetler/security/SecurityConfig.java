@@ -1,6 +1,7 @@
 package com.skoryk.projects.meetler.security;
 
 import com.skoryk.projects.meetler.common.AppUserDetailsService;
+import jakarta.servlet.DispatcherType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -30,7 +31,9 @@ public class SecurityConfig {
             session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(
             auth ->
-                auth.requestMatchers("/api/auth/**")
+                auth.dispatcherTypeMatchers(DispatcherType.ERROR)
+                    .permitAll()
+                    .requestMatchers("/api/auth/**")
                     .permitAll()
                     .requestMatchers("/api-docs", "/api-docs/**")
                     .permitAll()

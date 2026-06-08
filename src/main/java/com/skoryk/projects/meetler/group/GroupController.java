@@ -25,6 +25,11 @@ public class GroupController implements GroupApi {
   }
 
   @Override
+  public ResponseEntity<List<GroupResponse>> getMyGroups(AppUser user) {
+    return ResponseEntity.ok(groupService.getMyGroups(user));
+  }
+
+  @Override
   public ResponseEntity<GroupResponse> updateGroup(
       UUID groupId, UpdateGroupRequest request, AppUser user) {
     return ResponseEntity.ok(groupService.updateGroup(groupId, request, user));

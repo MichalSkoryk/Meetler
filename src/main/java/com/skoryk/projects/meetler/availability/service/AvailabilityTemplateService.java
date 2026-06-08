@@ -41,6 +41,7 @@ public class AvailabilityTemplateService {
   public AvailabilityTemplateResponse createTemplate(
       AppUser user, CreateAvailabilityTemplateRequest request) {
     validateTimezone(request.getTimezone());
+    validateDefaultAvailabilityStatus(request.getDefaultAvailabilityStatus());
 
     if (request.isDefault()) {
       templateRepository.clearDefaultForUser(user);
@@ -52,6 +53,8 @@ public class AvailabilityTemplateService {
             .name(request.getName())
             .timezone(request.getTimezone())
             .isDefault(request.isDefault())
+            .defaultAvailabilityStatus(
+                defaultAvailabilityStatusOrFallback(request.getDefaultAvailabilityStatus()))
             .build();
 
     return toTemplateResponse(templateRepository.save(template));
@@ -71,6 +74,7 @@ public class AvailabilityTemplateService {
   public AvailabilityTemplateResponse updateTemplate(
       UUID templateId, AppUser user, UpdateAvailabilityTemplateRequest request) {
     validateTimezone(request.getTimezone());
+    validateDefaultAvailabilityStatus(request.getDefaultAvailabilityStatus());
 
     AvailabilityTemplate template = getOwnedTemplate(templateId, user);
 
@@ -81,6 +85,8 @@ public class AvailabilityTemplateService {
     template.setName(request.getName());
     template.setTimezone(request.getTimezone());
     template.setDefault(request.isDefault());
+    template.setDefaultAvailabilityStatus(
+        defaultAvailabilityStatusOrFallback(request.getDefaultAvailabilityStatus()));
 
     return toTemplateResponse(templateRepository.save(template));
   }
@@ -116,8 +122,26 @@ public class AvailabilityTemplateService {
       UUID templateId, AppUser user, OffsetDateTime from, OffsetDateTime to, int page) {
     validateOffsetDateRange(from, to);
     AvailabilityTemplate template = getOwnedTemplate(templateId, user);
+    Pageable pageable = availabilityPage(page);
+
+    if (from == null && to == null) {
+      return blockRepository
+          .findByTemplateOrderByStartsAtAsc(template, pageable)
+          .map(this::toBlockResponse);
+    }
+    if (from == null) {
+      return blockRepository
+          .findByTemplateStartingBefore(template, to, pageable)
+          .map(this::toBlockResponse);
+    }
+    if (to == null) {
+      return blockRepository
+          .findByTemplateEndingAfter(template, from, pageable)
+          .map(this::toBlockResponse);
+    }
+
     return blockRepository
-        .findByTemplateOverlappingRange(template, from, to, availabilityPage(page))
+        .findByTemplateOverlappingRange(template, from, to, pageable)
         .map(this::toBlockResponse);
   }
 
@@ -228,8 +252,26 @@ public class AvailabilityTemplateService {
       UUID templateId, AppUser user, LocalDate from, LocalDate to, int page) {
     validateLocalDateRange(from, to);
     AvailabilityTemplate template = getOwnedTemplate(templateId, user);
+    Pageable pageable = availabilityPage(page);
+
+    if (from == null && to == null) {
+      return recurringBlockRepository
+          .findByTemplateOrdered(template, pageable)
+          .map(this::toRecurringBlockResponse);
+    }
+    if (from == null) {
+      return recurringBlockRepository
+          .findByTemplateStartingOnOrBefore(template, to, pageable)
+          .map(this::toRecurringBlockResponse);
+    }
+    if (to == null) {
+      return recurringBlockRepository
+          .findByTemplateEndingOnOrAfter(template, from, pageable)
+          .map(this::toRecurringBlockResponse);
+    }
+
     return recurringBlockRepository
-        .findByTemplateActiveInDateRange(template, from, to, availabilityPage(page))
+        .findByTemplateActiveInDateRange(template, from, to, pageable)
         .map(this::toRecurringBlockResponse);
   }
 
@@ -312,6 +354,15 @@ public class AvailabilityTemplateService {
     } catch (RuntimeException ex) {
       throw new IllegalArgumentException("Invalid timezone");
     }
+  }
+
+  private AvailabilityBlockStatus defaultAvailabilityStatusOrFallback(
+      AvailabilityBlockStatus status) {
+    return status == null ? AvailabilityBlockStatus.BUSY : status;
+  }
+
+  private void validateDefaultAvailabilityStatus(AvailabilityBlockStatus status) {
+    defaultAvailabilityStatusOrFallback(status);
   }
 
   private Pageable availabilityPage(int page) {
@@ -474,6 +525,7 @@ public class AvailabilityTemplateService {
         .name(template.getName())
         .isDefault(template.isDefault())
         .timezone(template.getTimezone())
+        .defaultAvailabilityStatus(template.getDefaultAvailabilityStatus())
         .createdAt(template.getCreatedAt())
         .updatedAt(template.getUpdatedAt())
         .build();

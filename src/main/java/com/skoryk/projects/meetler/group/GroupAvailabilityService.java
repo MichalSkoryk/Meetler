@@ -76,7 +76,6 @@ public class GroupAvailabilityService {
       List<MemberResolvedAvailability> memberAvailability) {
     List<UUID> availableUserIds = new ArrayList<>();
     List<UUID> busyUserIds = new ArrayList<>();
-    List<UUID> unavailableUserIds = new ArrayList<>();
     List<UUID> noTemplateUserIds = new ArrayList<>();
 
     for (MemberResolvedAvailability member : memberAvailability) {
@@ -87,10 +86,8 @@ public class GroupAvailabilityService {
 
       if (hasBusyOverlap(member.windows(), slotStart, slotEnd)) {
         busyUserIds.add(member.userId());
-      } else if (hasAvailableCoverage(member.windows(), slotStart, slotEnd)) {
-        availableUserIds.add(member.userId());
       } else {
-        unavailableUserIds.add(member.userId());
+        availableUserIds.add(member.userId());
       }
     }
 
@@ -100,11 +97,9 @@ public class GroupAvailabilityService {
         .totalMemberCount(memberAvailability.size())
         .availableCount(availableUserIds.size())
         .busyCount(busyUserIds.size())
-        .unavailableCount(unavailableUserIds.size())
         .noTemplateCount(noTemplateUserIds.size())
         .availableUserIds(availableUserIds)
         .busyUserIds(busyUserIds)
-        .unavailableUserIds(unavailableUserIds)
         .noTemplateUserIds(noTemplateUserIds)
         .build();
   }
@@ -118,18 +113,6 @@ public class GroupAvailabilityService {
             window ->
                 window.getStatus() == AvailabilityBlockStatus.BUSY
                     && overlaps(window.getStartsAt(), window.getEndsAt(), slotStart, slotEnd));
-  }
-
-  private boolean hasAvailableCoverage(
-      List<ResolvedAvailabilityWindowResponse> windows,
-      OffsetDateTime slotStart,
-      OffsetDateTime slotEnd) {
-    return windows.stream()
-        .anyMatch(
-            window ->
-                window.getStatus() == AvailabilityBlockStatus.AVAILABLE
-                    && !window.getStartsAt().isAfter(slotStart)
-                    && !window.getEndsAt().isBefore(slotEnd));
   }
 
   private boolean overlaps(

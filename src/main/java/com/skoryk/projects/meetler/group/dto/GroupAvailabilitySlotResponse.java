@@ -15,10 +15,8 @@ public class GroupAvailabilitySlotResponse {
   private int totalMemberCount;
   private int availableCount;
   private int busyCount;
-  private int unavailableCount;
   private int noTemplateCount;
   private List<UUID> availableUserIds;
   private List<UUID> busyUserIds;
-  private List<UUID> unavailableUserIds;
   private List<UUID> noTemplateUserIds;
 }

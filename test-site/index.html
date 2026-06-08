@@ -280,6 +280,10 @@
         return new Date(value).toISOString();
       }
 
+      function toDateOnly(value) {
+        return value ? value.slice(0, 10) : "";
+      }
+
       function setCookie(name, value) {
         document.cookie = `${name}=${encodeURIComponent(value || "")}; Path=/; SameSite=Lax`;
       }
@@ -331,6 +335,8 @@
         const [refreshToken, setRefreshToken] = useState("");
         const [calendars, setCalendars] = useState([]);
         const [templates, setTemplates] = useState([]);
+        const [groups, setGroups] = useState([]);
+        const [groupMembers, setGroupMembers] = useState([]);
         const [groupsOutput, setGroupsOutput] = useState(null);
         const [gridRows, setGridRows] = useState([]);
 
@@ -346,6 +352,7 @@
           name: "Default availability",
           timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Warsaw",
           isDefault: true,
+          defaultAvailabilityStatus: "BUSY",
         });
         const [templateId, setTemplateId] = useState("");
         const [blockForm, setBlockForm] = useState({
@@ -370,6 +377,7 @@
         });
         const [sourceCalendarId, setSourceCalendarId] = useState("");
         const [groupForm, setGroupForm] = useState({ groupName: "Weekend plans", groupId: "", inviteCode: "" });
+        const [adminUserId, setAdminUserId] = useState("");
         const [range, setRange] = useState(initialRange());
 
         const hasToken = Boolean(accessToken);
@@ -382,12 +390,25 @@
           setCookie("meetler_access_token", savedAccess);
         }, []);
 
+        function resetWorkspaceState() {
+          setCalendars([]);
+          setTemplates([]);
+          setGroups([]);
+          setGroupMembers([]);
+          setTemplateId("");
+          setSourceCalendarId("");
+          setAdminUserId("");
+          setGroupsOutput(null);
+          setGridRows([]);
+        }
+
         function saveTokens(tokens) {
           const nextAccess = tokens.accessToken || "";
           const nextRefresh = tokens.refreshToken || "";
           localStorage.setItem("meetler.accessToken", nextAccess);
           localStorage.setItem("meetler.refreshToken", nextRefresh);
           setCookie("meetler_access_token", nextAccess);
+          resetWorkspaceState();
           setAccessToken(nextAccess);
           setRefreshToken(nextRefresh);
         }
@@ -396,6 +417,7 @@
           localStorage.removeItem("meetler.accessToken");
           localStorage.removeItem("meetler.refreshToken");
           deleteCookie("meetler_access_token");
+          resetWorkspaceState();
           setAccessToken("");
           setRefreshToken("");
         }
@@ -414,7 +436,15 @@
             });
             const text = await response.text();
             const body = text ? JSON.parse(text) : null;
-            if (!response.ok) throw body || { status: response.status, message: response.statusText };
+            if (!response.ok) {
+              throw body || {
+                status: response.status,
+                message:
+                  response.status === 403
+                    ? "Forbidden. Log in again and refresh templates before calling this endpoint."
+                    : response.statusText,
+              };
+            }
             setOutput(pretty(body ?? "OK"));
             return body;
           } catch (error) {
@@ -435,14 +465,52 @@
           const data = await api("/availability/templates?page=0");
           const items = data?.content || data || [];
           setTemplates(items);
-          if (!templateId && items.length) setTemplateId(items[0].id);
+          if (!items.some((template) => template.id === templateId)) {
+            setTemplateId(items[0]?.id || "");
+          }
           return items;
+        }
+
+        async function refreshGroups(preferredGroupId = groupForm.groupId) {
+          const data = await api("/groups");
+          const items = data || [];
+          setGroups(items);
+          if (!items.some((group) => group.id === preferredGroupId)) {
+            setGroupForm((current) => ({ ...current, groupId: items[0]?.id || "" }));
+          } else {
+            setGroupForm((current) => ({ ...current, groupId: preferredGroupId }));
+          }
+          return items;
+        }
+
+        async function refreshGroupMembers(groupId = groupForm.groupId) {
+          const data = await api(`/groups/${groupId}/members`);
+          const items = data || [];
+          setGroupMembers(items);
+          if (!items.some((member) => member.userId === adminUserId || member.user?.id === adminUserId)) {
+            setAdminUserId(items[0]?.userId || items[0]?.user?.id || "");
+          }
+          return items;
+        }
+
+        function availabilityBlockRangeQuery() {
+          const params = new URLSearchParams({ page: "0" });
+          if (range.from) params.set("from", toOffset(range.from));
+          if (range.to) params.set("to", toOffset(range.to));
+          return params.toString();
+        }
+
+        function recurringBlockRangeQuery() {
+          const params = new URLSearchParams({ page: "0" });
+          if (range.from) params.set("from", toDateOnly(range.from));
+          if (range.to) params.set("to", toDateOnly(range.to));
+          return params.toString();
         }
 
         const templateOptions = [{ value: "", label: "Select template" }].concat(
           templates.map((template) => ({
             value: template.id,
-            label: `${template.name} (${template.timezone})`,
+            label: `${template.name} (${template.timezone}, empty=${template.defaultAvailabilityStatus || "BUSY"})`,
           })),
         );
 
@@ -450,6 +518,20 @@
           calendars.map((calendar) => ({
             value: calendar.id,
             label: `${calendar.name} [${calendar.provider}]`,
+          })),
+        );
+
+        const groupOptions = [{ value: "", label: "Select group" }].concat(
+          groups.map((group) => ({
+            value: group.id,
+            label: `${group.name}${group.role ? ` [${group.role}]` : ""}`,
+          })),
+        );
+
+        const memberOptions = [{ value: "", label: "Select user" }].concat(
+          groupMembers.map((member) => ({
+            value: member.userId || member.user?.id || "",
+            label: `${member.userName || member.userEmail || member.user?.name || member.user?.email || member.userId || member.user?.id || "User"} [${member.role}]`,
           })),
         );
 
@@ -544,7 +626,8 @@
                     onClick={() => {
                       if (!accessToken) return setOutput("Login first, or paste and save an access token.");
                       setCookie("meetler_access_token", accessToken);
-                      window.location.href = "/api/external-calendars/google/connect";
+                      const returnUrl = encodeURIComponent(window.location.href);
+                      window.location.href = `/api/external-calendars/google/connect?returnUrl=${returnUrl}`;
                     }}
                   >
                     Connect Google Calendar
@@ -610,6 +693,15 @@
                   onChange={(value) => setTemplateForm({ ...templateForm, isDefault: value === "true" })}
                   options={[{ value: "true", label: "true" }, { value: "false", label: "false" }]}
                 />
+                <SelectField
+                  label="Empty space"
+                  value={templateForm.defaultAvailabilityStatus}
+                  onChange={(defaultAvailabilityStatus) => setTemplateForm({ ...templateForm, defaultAvailabilityStatus })}
+                  options={[
+                    { value: "BUSY", label: "BUSY" },
+                    { value: "AVAILABLE", label: "AVAILABLE" },
+                  ]}
+                />
                 <div className="actions">
                   <button disabled={busy} onClick={() => api("/availability/templates", { method: "POST", body: JSON.stringify(templateForm) }).then(refreshTemplates)}>
                     Create Template
@@ -621,10 +713,15 @@
               <section>
                 <h2>Active Template</h2>
                 <SelectField label="Template" value={templateId} onChange={setTemplateId} options={templateOptions} />
+                <div className="row">
+                  <Field label="Range from" type="datetime-local" value={range.from} onChange={(from) => setRange({ ...range, from })} />
+                  <Field label="Range to" type="datetime-local" value={range.to} onChange={(to) => setRange({ ...range, to })} />
+                </div>
                 <div className="actions">
                   <button className="secondary" disabled={!templateId || busy} onClick={() => api(`/availability/templates/${templateId}`)}>Get</button>
-                  <button className="secondary" disabled={!templateId || busy} onClick={() => api(`/availability/templates/${templateId}/blocks?page=0`)}>List Blocks</button>
-                  <button className="secondary" disabled={!templateId || busy} onClick={() => api(`/availability/templates/${templateId}/recurring-blocks?page=0`)}>List Recurring</button>
+                  <button className="secondary" disabled={!templateId || busy} onClick={() => api(`/availability/templates/${templateId}/blocks?${availabilityBlockRangeQuery()}`)}>List Blocks</button>
+                  <button className="secondary" disabled={!templateId || busy} onClick={() => api(`/availability/templates/${templateId}/recurring-blocks?${recurringBlockRangeQuery()}`)}>List Recurring</button>
+                  <button className="secondary" disabled={!templateId || busy} onClick={() => api(`/availability/templates/${templateId}/blocks?page=0`)}>List All Blocks</button>
                 </div>
               </section>
 
@@ -711,21 +808,55 @@
         }
 
         function GroupsTab() {
+          const memberRows = groupMembers.map((member) => ({
+            id: member.id,
+            userId: member.userId || member.user?.id,
+            name: member.userName || member.user?.name,
+            email: member.userEmail || member.user?.email,
+            role: member.role,
+            joinedAt: member.joinedAt,
+            availabilityTemplateName: member.availabilityTemplateName,
+          }));
+
           return (
             <div className="grid">
               <section>
                 <h2>Groups</h2>
                 <Field label="Group name" value={groupForm.groupName} onChange={(groupName) => setGroupForm({ ...groupForm, groupName })} />
-                <Field label="Group ID" value={groupForm.groupId} onChange={(groupId) => setGroupForm({ ...groupForm, groupId })} />
+                <SelectField label="Active group" value={groupForm.groupId} onChange={(groupId) => setGroupForm({ ...groupForm, groupId })} options={groupOptions} />
                 <div className="actions">
                   <button disabled={busy} onClick={async () => {
                     const data = await api("/groups", { method: "POST", body: JSON.stringify({ name: groupForm.groupName }) });
-                    setGroupForm({ ...groupForm, groupId: data.id });
+                    setGroupForm((current) => ({ ...current, groupId: data.id }));
+                    await refreshGroups(data.id);
                   }}>
                     Create Group
                   </button>
-                  <button className="secondary" disabled={!groupForm.groupId || busy} onClick={() => api(`/groups/${groupForm.groupId}/members`)}>
+                  <button className="secondary" disabled={busy} onClick={refreshGroups}>
+                    List My Groups
+                  </button>
+                  <button className="secondary" disabled={!groupForm.groupId || busy} onClick={() => refreshGroupMembers()}>
                     List Members
+                  </button>
+                </div>
+              </section>
+
+              <section>
+                <h2>Group Admin</h2>
+                <SelectField label="Member" value={adminUserId} onChange={setAdminUserId} options={memberOptions} />
+                <Field label="User ID" value={adminUserId} onChange={setAdminUserId} />
+                <div className="actions">
+                  <button disabled={!groupForm.groupId || !adminUserId || busy} onClick={() => api(`/groups/${groupForm.groupId}/admin/promote/${adminUserId}`, { method: "POST" }).then(() => refreshGroupMembers())}>
+                    Promote
+                  </button>
+                  <button className="secondary" disabled={!groupForm.groupId || !adminUserId || busy} onClick={() => api(`/groups/${groupForm.groupId}/admin/demote/${adminUserId}`, { method: "POST" }).then(() => refreshGroupMembers())}>
+                    Demote
+                  </button>
+                  <button className="secondary" disabled={!groupForm.groupId || !adminUserId || busy} onClick={() => api(`/groups/${groupForm.groupId}/admin/transfer/${adminUserId}`, { method: "POST" }).then(async () => { await refreshGroups(); await refreshGroupMembers(); })}>
+                    Transfer Owner
+                  </button>
+                  <button className="danger" disabled={!groupForm.groupId || !adminUserId || busy} onClick={() => api(`/groups/${groupForm.groupId}/admin/remove/${adminUserId}`, { method: "DELETE" }).then(() => refreshGroupMembers())}>
+                    Remove
                   </button>
                 </div>
               </section>
@@ -783,8 +914,18 @@
               </section>
 
               <section className="wide">
+                <h2>My Groups</h2>
+                <DataTable rows={groups} columns={["id", "name", "role", "createdAt", "updatedAt"]} />
+              </section>
+
+              <section className="wide">
+                <h2>Members</h2>
+                <DataTable rows={memberRows} columns={["userId", "name", "email", "role", "availabilityTemplateName", "joinedAt"]} />
+              </section>
+
+              <section className="wide">
                 <h2>Grid Results</h2>
-                <DataTable rows={gridRows.slice(0, 100)} columns={["startsAt", "endsAt", "availableCount", "busyCount", "unavailableCount", "noTemplateCount"]} />
+                <DataTable rows={gridRows.slice(0, 100)} columns={["startsAt", "endsAt", "availableCount", "busyCount", "noTemplateCount"]} />
               </section>
             </div>
           );

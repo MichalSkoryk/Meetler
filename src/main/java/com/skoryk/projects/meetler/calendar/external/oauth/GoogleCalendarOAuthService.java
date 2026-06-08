@@ -8,7 +8,6 @@ import com.skoryk.projects.meetler.user.AppUser;
 import com.skoryk.projects.meetler.user.AppUserRepository;
 import java.net.URI;
 import java.time.OffsetDateTime;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -31,9 +30,13 @@ public class GoogleCalendarOAuthService {
   private final RestClient restClient = RestClient.create();
 
   public URI buildAuthorizationUri(AppUser user) {
+    return buildAuthorizationUri(user, null);
+  }
+
+  public URI buildAuthorizationUri(AppUser user, String returnUrl) {
     requireConfigured();
 
-    String state = stateService.createState(user.getId(), PROVIDER);
+    String state = stateService.createState(user.getId(), PROVIDER, returnUrl);
 
     return UriComponentsBuilder.fromUriString(properties.getAuthorizationUri())
         .queryParam("client_id", properties.getClientId())
@@ -49,12 +52,17 @@ public class GoogleCalendarOAuthService {
   }
 
   public ExternalCalendarAccountResponse handleCallback(String code, String state) {
+    return handleCallbackWithReturnUrl(code, state).account();
+  }
+
+  public GoogleCalendarOAuthResult handleCallbackWithReturnUrl(String code, String state) {
     requireConfigured();
 
-    UUID userId = stateService.validateState(state, PROVIDER);
+    OAuthStateService.OAuthUserState userState =
+        stateService.validateStateWithReturnUrl(state, PROVIDER);
     AppUser user =
         userRepository
-            .findById(userId)
+            .findById(userState.userId())
             .orElseThrow(() -> new IllegalArgumentException("OAuth user not found"));
 
     GoogleTokenResponse tokenResponse = exchangeCodeForTokens(code);
@@ -74,7 +82,9 @@ public class GoogleCalendarOAuthService {
     request.setTokenType(tokenResponse.getTokenType());
     request.setExpiresAt(expiresAt(tokenResponse.getExpiresIn()));
 
-    return externalCalendarAccountService.storeOrUpdateAccount(user, request);
+    ExternalCalendarAccountResponse account =
+        externalCalendarAccountService.storeOrUpdateAccount(user, request);
+    return new GoogleCalendarOAuthResult(account, userState.returnUrl());
   }
 
   private GoogleTokenResponse exchangeCodeForTokens(String code) {
@@ -121,4 +131,7 @@ public class GoogleCalendarOAuthService {
   private boolean isBlank(String value) {
     return value == null || value.isBlank();
   }
+
+  public record GoogleCalendarOAuthResult(
+      ExternalCalendarAccountResponse account, String returnUrl) {}
 }

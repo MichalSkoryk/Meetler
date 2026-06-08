@@ -1,6 +1,7 @@
 package com.skoryk.projects.meetler.availability.resolver;
 
 import com.skoryk.projects.meetler.availability.dto.ResolvedAvailabilityWindowResponse;
+import com.skoryk.projects.meetler.availability.model.AvailabilityBlockStatus;
 import com.skoryk.projects.meetler.availability.model.AvailabilityTemplate;
 import com.skoryk.projects.meetler.availability.model.AvailabilityTemplateBlock;
 import com.skoryk.projects.meetler.availability.model.AvailabilityTemplateRecurringBlock;
@@ -63,6 +64,7 @@ public class AvailabilityTemplateResolver {
 
     resolved.addAll(oneOffWindows);
     resolved.addAll(externalBusyWindows);
+    resolved.addAll(resolveDefaultWindows(template, from, to, resolved));
 
     resolved.sort(
         Comparator.comparing(ResolvedAvailabilityWindowResponse::getStartsAt)
@@ -70,6 +72,27 @@ public class AvailabilityTemplateResolver {
             .thenComparing(window -> window.getSource().name()));
 
     return resolved;
+  }
+
+  private List<ResolvedAvailabilityWindowResponse> resolveDefaultWindows(
+      AvailabilityTemplate template,
+      OffsetDateTime from,
+      OffsetDateTime to,
+      List<ResolvedAvailabilityWindowResponse> explicitWindows) {
+    AvailabilityBlockStatus defaultStatus =
+        template.getDefaultAvailabilityStatus() == null
+            ? AvailabilityBlockStatus.BUSY
+            : template.getDefaultAvailabilityStatus();
+
+    ResolvedAvailabilityWindowResponse defaultWindow =
+        ResolvedAvailabilityWindowResponse.builder()
+            .startsAt(from)
+            .endsAt(to)
+            .status(defaultStatus)
+            .source(ResolvedAvailabilitySource.DEFAULT)
+            .build();
+
+    return subtractOneOffOverlaps(defaultWindow, explicitWindows);
   }
 
   private List<ResolvedAvailabilityWindowResponse> resolveExternalBusyWindows(
@@ -94,7 +117,7 @@ public class AvailabilityTemplateResolver {
     return ResolvedAvailabilityWindowResponse.builder()
         .startsAt(max(event.getStartsAt(), from))
         .endsAt(min(event.getEndsAt(), to))
-        .status(com.skoryk.projects.meetler.availability.model.AvailabilityBlockStatus.BUSY)
+        .status(AvailabilityBlockStatus.BUSY)
         .source(ResolvedAvailabilitySource.EXTERNAL_CALENDAR)
         .sourceBlockId(event.getId())
         .note(event.getTitle())
