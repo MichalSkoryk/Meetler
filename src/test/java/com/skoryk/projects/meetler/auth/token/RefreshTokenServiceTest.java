@@ -16,6 +16,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
 class RefreshTokenServiceTest {
@@ -34,6 +35,21 @@ class RefreshTokenServiceTest {
     assertThat(token).isNotBlank();
     verify(repo).deleteByUser(user);
     verify(repo).save(any(RefreshToken.class));
+  }
+
+  @Test
+  void createRefreshTokenUsesConfiguredTtl() {
+    AppUser user = user();
+    ReflectionTestUtils.setField(service, "refreshTokenTtlDays", 7L);
+    when(repo.save(any(RefreshToken.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+    service.createRefreshToken(user);
+
+    org.mockito.ArgumentCaptor<RefreshToken> tokenCaptor =
+        org.mockito.ArgumentCaptor.forClass(RefreshToken.class);
+    verify(repo).save(tokenCaptor.capture());
+    assertThat(tokenCaptor.getValue().getExpiresAt())
+        .isBetween(OffsetDateTime.now().plusDays(6), OffsetDateTime.now().plusDays(8));
   }
 
   @Test

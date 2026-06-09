@@ -4,6 +4,7 @@ import com.skoryk.projects.meetler.user.AppUser;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,12 +14,15 @@ public class RefreshTokenService {
 
   private final RefreshTokenRepository repo;
 
+  @Value("${auth.refresh-token.ttl-days:30}")
+  private long refreshTokenTtlDays;
+
   public String createRefreshToken(AppUser user) {
     RefreshToken token =
         RefreshToken.builder()
             .token(UUID.randomUUID().toString())
             .user(user)
-            .expiresAt(OffsetDateTime.now().plusDays(30))
+            .expiresAt(OffsetDateTime.now().plusDays(refreshTokenTtlDays))
             .revoked(false)
             .build();
 

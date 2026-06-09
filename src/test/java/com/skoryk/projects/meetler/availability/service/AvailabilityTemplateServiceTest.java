@@ -96,6 +96,20 @@ class AvailabilityTemplateServiceTest {
   }
 
   @Test
+  void createTemplateRejectsSecondGuestTemplate() {
+    AppUser user = user();
+    user.setRole(AppUserRole.GUEST);
+    CreateAvailabilityTemplateRequest request = createTemplateRequest();
+    when(templateRepository.existsByUser(user)).thenReturn(true);
+
+    assertThatThrownBy(() -> service.createTemplate(user, request))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessage("Guest accounts can create only one availability template");
+
+    verify(templateRepository, never()).save(any());
+  }
+
+  @Test
   void addBlockDefaultsSourceToManual() {
     AppUser user = user();
     AvailabilityTemplate template = template(user);
@@ -106,7 +120,8 @@ class AvailabilityTemplateServiceTest {
     request.setSource(null);
     request.setNote("coffee");
 
-    when(templateRepository.findByIdAndUser(template.getId(), user)).thenReturn(Optional.of(template));
+    when(templateRepository.findByIdAndUser(template.getId(), user))
+        .thenReturn(Optional.of(template));
     when(blockRepository.save(any(AvailabilityTemplateBlock.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -125,7 +140,8 @@ class AvailabilityTemplateServiceTest {
     request.setEndsAt(OffsetDateTime.parse("2026-06-08T10:00:00+02:00"));
     request.setStatus(AvailabilityBlockStatus.BUSY);
 
-    when(templateRepository.findByIdAndUser(template.getId(), user)).thenReturn(Optional.of(template));
+    when(templateRepository.findByIdAndUser(template.getId(), user))
+        .thenReturn(Optional.of(template));
 
     assertThatThrownBy(() -> service.addBlock(template.getId(), user, request))
         .isInstanceOf(IllegalArgumentException.class)
@@ -138,7 +154,8 @@ class AvailabilityTemplateServiceTest {
   void getBlocksUsesUnfilteredQueryWhenNoRangeProvided() {
     AppUser user = user();
     AvailabilityTemplate template = template(user);
-    when(templateRepository.findByIdAndUser(template.getId(), user)).thenReturn(Optional.of(template));
+    when(templateRepository.findByIdAndUser(template.getId(), user))
+        .thenReturn(Optional.of(template));
     when(blockRepository.findByTemplateOrderByStartsAtAsc(eq(template), any()))
         .thenReturn(new PageImpl<>(java.util.List.of()));
 
@@ -153,7 +170,8 @@ class AvailabilityTemplateServiceTest {
   void getBlocksRejectsNegativePage() {
     AppUser user = user();
     AvailabilityTemplate template = template(user);
-    when(templateRepository.findByIdAndUser(template.getId(), user)).thenReturn(Optional.of(template));
+    when(templateRepository.findByIdAndUser(template.getId(), user))
+        .thenReturn(Optional.of(template));
 
     assertThatThrownBy(() -> service.getBlocks(template.getId(), user, null, null, -1))
         .isInstanceOf(IllegalArgumentException.class)
@@ -168,7 +186,8 @@ class AvailabilityTemplateServiceTest {
     request.setFrequency(AvailabilityRecurrenceFrequency.WEEKLY);
     request.setDayOfWeek(null);
 
-    when(templateRepository.findByIdAndUser(template.getId(), user)).thenReturn(Optional.of(template));
+    when(templateRepository.findByIdAndUser(template.getId(), user))
+        .thenReturn(Optional.of(template));
 
     assertThatThrownBy(() -> service.addRecurringBlock(template.getId(), user, request))
         .isInstanceOf(IllegalArgumentException.class)

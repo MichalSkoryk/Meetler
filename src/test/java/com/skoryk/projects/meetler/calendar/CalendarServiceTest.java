@@ -38,7 +38,8 @@ class CalendarServiceTest {
     request.setEditable(true);
     request.setSyncDirection(CalendarSynchronizationType.NONE);
 
-    when(calendarRepository.save(any(Calendar.class))).thenAnswer(invocation -> invocation.getArgument(0));
+    when(calendarRepository.save(any(Calendar.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
 
     CalendarResponse response = service.createCalendar(request, user);
 
@@ -80,7 +81,8 @@ class CalendarServiceTest {
     request.setIsActive(false);
 
     when(calendarRepository.findById(calendar.getId())).thenReturn(Optional.of(calendar));
-    when(calendarRepository.save(any(Calendar.class))).thenAnswer(invocation -> invocation.getArgument(0));
+    when(calendarRepository.save(any(Calendar.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
 
     CalendarResponse response = service.updateCalendar(calendar.getId(), request, user);
 

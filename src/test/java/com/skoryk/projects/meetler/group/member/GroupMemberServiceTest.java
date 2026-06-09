@@ -38,7 +38,8 @@ class GroupMemberServiceTest {
     Group group = group();
     AppUser user = user();
     when(groupRepository.findById(group.getId())).thenReturn(Optional.of(group));
-    when(memberRepository.findByGroupAndUser(group, user)).thenReturn(Optional.of(member(group, user, GroupRole.MEMBER)));
+    when(memberRepository.findByGroupAndUser(group, user))
+        .thenReturn(Optional.of(member(group, user, GroupRole.MEMBER)));
 
     service.addMember(group.getId(), user, GroupRole.MEMBER);
 
@@ -50,7 +51,8 @@ class GroupMemberServiceTest {
     Group group = group();
     AppUser user = user();
     when(groupRepository.findById(group.getId())).thenReturn(Optional.of(group));
-    when(memberRepository.findByGroupAndUser(group, user)).thenReturn(Optional.of(member(group, user, GroupRole.OWNER)));
+    when(memberRepository.findByGroupAndUser(group, user))
+        .thenReturn(Optional.of(member(group, user, GroupRole.OWNER)));
 
     assertThatThrownBy(() -> service.removeMember(group.getId(), user))
         .isInstanceOf(IllegalArgumentException.class)
@@ -65,8 +67,10 @@ class GroupMemberServiceTest {
     AppUser user = user();
     GroupMember member = member(group, user, GroupRole.MEMBER);
     UUID templateId = UUID.randomUUID();
-    when(memberRepository.findByGroupIdAndUserId(group.getId(), user.getId())).thenReturn(Optional.of(member));
-    when(availabilityTemplateRepository.findByIdAndUser(templateId, user)).thenReturn(Optional.empty());
+    when(memberRepository.findByGroupIdAndUserId(group.getId(), user.getId()))
+        .thenReturn(Optional.of(member));
+    when(availabilityTemplateRepository.findByIdAndUser(templateId, user))
+        .thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> service.selectAvailabilityTemplate(group.getId(), user, templateId))
         .isInstanceOf(IllegalArgumentException.class)
@@ -79,8 +83,10 @@ class GroupMemberServiceTest {
     AppUser user = user();
     GroupMember member = member(group, user, GroupRole.MEMBER);
     AvailabilityTemplate template = template(user);
-    when(memberRepository.findByGroupIdAndUserId(group.getId(), user.getId())).thenReturn(Optional.of(member));
-    when(availabilityTemplateRepository.findByIdAndUser(template.getId(), user)).thenReturn(Optional.of(template));
+    when(memberRepository.findByGroupIdAndUserId(group.getId(), user.getId()))
+        .thenReturn(Optional.of(member));
+    when(availabilityTemplateRepository.findByIdAndUser(template.getId(), user))
+        .thenReturn(Optional.of(template));
     when(memberRepository.save(member)).thenReturn(member);
 
     GroupAvailabilityTemplateResponse response =

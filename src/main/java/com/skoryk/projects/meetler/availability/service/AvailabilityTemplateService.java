@@ -7,6 +7,7 @@ import com.skoryk.projects.meetler.availability.resolver.AvailabilityTemplateRes
 import com.skoryk.projects.meetler.calendar.Calendar;
 import com.skoryk.projects.meetler.calendar.CalendarRepository;
 import com.skoryk.projects.meetler.user.AppUser;
+import com.skoryk.projects.meetler.user.AppUserRole;
 import java.time.DateTimeException;
 import java.time.Duration;
 import java.time.LocalDate;
@@ -42,6 +43,7 @@ public class AvailabilityTemplateService {
       AppUser user, CreateAvailabilityTemplateRequest request) {
     validateTimezone(request.getTimezone());
     validateDefaultAvailabilityStatus(request.getDefaultAvailabilityStatus());
+    validateGuestTemplateLimit(user);
 
     if (request.isDefault()) {
       templateRepository.clearDefaultForUser(user);
@@ -346,6 +348,12 @@ public class AvailabilityTemplateService {
     return templateRepository
         .findByIdAndUser(templateId, user)
         .orElseThrow(() -> new IllegalArgumentException("Availability template not found"));
+  }
+
+  private void validateGuestTemplateLimit(AppUser user) {
+    if (user.getRole() == AppUserRole.GUEST && templateRepository.existsByUser(user)) {
+      throw new IllegalStateException("Guest accounts can create only one availability template");
+    }
   }
 
   private void validateTimezone(String timezone) {

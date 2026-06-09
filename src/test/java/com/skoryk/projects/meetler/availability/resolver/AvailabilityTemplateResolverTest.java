@@ -111,7 +111,8 @@ class AvailabilityTemplateResolverTest {
             OffsetDateTime.parse("2026-06-08T11:00:00+02:00"),
             AvailabilityBlockStatus.BUSY);
 
-    when(blockRepository.findByTemplateOverlappingRange(template, from, to)).thenReturn(List.of(oneOff));
+    when(blockRepository.findByTemplateOverlappingRange(template, from, to))
+        .thenReturn(List.of(oneOff));
     when(sourceCalendarRepository.findByTemplate(template)).thenReturn(List.of());
     when(recurringBlockRepository.findByTemplateActiveInDateRange(
             template, LocalDate.parse("2026-06-08"), LocalDate.parse("2026-06-08")))

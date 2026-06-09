@@ -19,6 +19,8 @@ public interface AvailabilityTemplateRepository extends JpaRepository<Availabili
 
   Optional<AvailabilityTemplate> findByIdAndUser(UUID id, AppUser user);
 
+  boolean existsByUser(AppUser user);
+
   @Modifying
   @Query("update AvailabilityTemplate t set t.isDefault = false where t.user = :user")
   void clearDefaultForUser(AppUser user);

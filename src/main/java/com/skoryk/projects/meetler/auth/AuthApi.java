@@ -1,7 +1,12 @@
 package com.skoryk.projects.meetler.auth;
 
 import com.skoryk.projects.meetler.auth.dto.AuthResponse;
+import com.skoryk.projects.meetler.auth.dto.GuestLoginRequest;
+import com.skoryk.projects.meetler.auth.dto.GuestLoginResponse;
 import com.skoryk.projects.meetler.auth.dto.LoginRequest;
+import com.skoryk.projects.meetler.auth.dto.PasswordResetConfirmRequest;
+import com.skoryk.projects.meetler.auth.dto.PasswordResetRequest;
+import com.skoryk.projects.meetler.auth.dto.PasswordResetResponse;
 import com.skoryk.projects.meetler.auth.dto.RefreshTokenRequest;
 import com.skoryk.projects.meetler.auth.dto.RegisterRequest;
 import io.swagger.v3.oas.annotations.Operation;
@@ -42,6 +47,35 @@ public interface AuthApi {
       description = "Revokes the supplied refresh token so it can no longer be used.")
   @PostMapping("/logout")
   ResponseEntity<Void> logout(@Valid @RequestBody RefreshTokenRequest request);
+
+  @Operation(
+      summary = "Request guest login link",
+      description =
+          "Creates or reuses a guest account for the supplied email and creates a one-time login link.")
+  @PostMapping("/guest/request-login")
+  ResponseEntity<GuestLoginResponse> requestGuestLogin(
+      @Valid @RequestBody GuestLoginRequest request);
+
+  @Operation(
+      summary = "Log in as guest",
+      description = "Consumes a one-time guest login token and returns access and refresh tokens.")
+  @GetMapping("/guest/login")
+  ResponseEntity<AuthResponse> guestLogin(@RequestParam String token);
+
+  @Operation(
+      summary = "Request password reset",
+      description =
+          "Creates a one-time password reset link for the supplied email when an active account exists.")
+  @PostMapping("/password/reset/request")
+  ResponseEntity<PasswordResetResponse> requestPasswordReset(
+      @Valid @RequestBody PasswordResetRequest request);
+
+  @Operation(
+      summary = "Confirm password reset",
+      description = "Consumes a one-time password reset token and sets a new account password.")
+  @PostMapping("/password/reset/confirm")
+  ResponseEntity<Void> confirmPasswordReset(
+      @Valid @RequestBody PasswordResetConfirmRequest request);
 
   @Operation(
       summary = "Start Google login",

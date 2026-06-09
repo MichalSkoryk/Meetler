@@ -18,18 +18,14 @@ class GroupAvailabilityApiIntegrationTest extends AbstractIntegrationTest {
   @Test
   void inviteMemberSelectTemplatesAndBuildAvailabilityGrid() throws Exception {
     String ownerToken = registerAndReturnAccessToken("owner-" + UUID.randomUUID() + "@example.com");
-    String memberToken = registerAndReturnAccessToken("member-" + UUID.randomUUID() + "@example.com");
+    String memberToken =
+        registerAndReturnAccessToken("member-" + UUID.randomUUID() + "@example.com");
 
-    String ownerTemplateId =
-        createTemplate(ownerToken, "Owner availability", "AVAILABLE", true);
+    String ownerTemplateId = createTemplate(ownerToken, "Owner availability", "AVAILABLE", true);
     addAvailableBlock(
-        ownerToken,
-        ownerTemplateId,
-        "2026-06-08T10:00:00+02:00",
-        "2026-06-08T10:30:00+02:00");
+        ownerToken, ownerTemplateId, "2026-06-08T10:00:00+02:00", "2026-06-08T10:30:00+02:00");
 
-    String memberTemplateId =
-        createTemplate(memberToken, "Member busy by default", "BUSY", true);
+    String memberTemplateId = createTemplate(memberToken, "Member busy by default", "BUSY", true);
 
     String groupId = createGroup(ownerToken);
     String inviteCode = createInvite(ownerToken, groupId);
@@ -97,10 +93,14 @@ class GroupAvailabilityApiIntegrationTest extends AbstractIntegrationTest {
                 .content(
                     json(
                         Map.of(
-                            "startsAt", startsAt,
-                            "endsAt", endsAt,
-                            "status", "AVAILABLE",
-                            "note", "Free"))))
+                            "startsAt",
+                            startsAt,
+                            "endsAt",
+                            endsAt,
+                            "status",
+                            "AVAILABLE",
+                            "note",
+                            "Free"))))
         .andExpect(status().isOk());
   }
 

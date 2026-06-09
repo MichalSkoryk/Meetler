@@ -46,11 +46,26 @@ logging:
 jwt:
   secret: ${JWT_SECRET:3cfa76ef14937c1c0ea519f8fc057a80fde0a94e1b5da4f94b5d08c7e77b1eae2f3b9a5e8d7c6b5a4f3e2d1c0b9a8d7c6e5f4d3c2b1a0f9e8d7c6b5a4f3e2d1}
 
+guest-login:
+  token-ttl-minutes: ${GUEST_LOGIN_TOKEN_TTL_MINUTES:30}
+  login-url: ${GUEST_LOGIN_URL:http://localhost:8080/api/auth/guest/login}
+
+email:
+  from: ${EMAIL_FROM:Meetler <no-reply@localhost>}
+  resend:
+    api-key: ${RESEND_API_KEY:}
+    api-url: ${RESEND_API_URL:https://api.resend.com}
+
 auth:
+  refresh-token:
+    ttl-days: ${REFRESH_TOKEN_TTL_DAYS:30}
+  password-reset:
+    token-ttl-minutes: ${PASSWORD_RESET_TOKEN_TTL_MINUTES:30}
+    reset-url: ${PASSWORD_RESET_URL:http://localhost:8080/api/auth/password/reset/confirm}
   google:
     oauth:
-      client-id: ${GOOGLE_AUTH_CLIENT_ID:}
-      client-secret: ${GOOGLE_AUTH_CLIENT_SECRET:}
+      client-id: ${GOOGLE_AUTH_CLIENT_ID:${GOOGLE_CLIENT_ID:}}
+      client-secret: ${GOOGLE_AUTH_CLIENT_SECRET:${GOOGLE_CLIENT_SECRET:}}
       redirect-uri: ${GOOGLE_AUTH_REDIRECT_URI:http://localhost:8080/api/auth/google/callback}
   microsoft:
     oauth:
@@ -62,6 +77,6 @@ external-calendar:
   token-encryption-key: ${EXTERNAL_CALENDAR_TOKEN_ENCRYPTION_KEY:QkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkI=}
   google:
     oauth:
-      client-id: ${GOOGLE_OAUTH_CLIENT_ID:}
-      client-secret: ${GOOGLE_OAUTH_CLIENT_SECRET:}
+      client-id: ${GOOGLE_OAUTH_CLIENT_ID:${GOOGLE_CLIENT_ID:}}
+      client-secret: ${GOOGLE_OAUTH_CLIENT_SECRET:${GOOGLE_CLIENT_SECRET:}}
       redirect-uri: ${GOOGLE_OAUTH_REDIRECT_URI:http://localhost:8080/api/external-calendars/google/callback}

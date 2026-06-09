@@ -29,7 +29,8 @@ class AppUserServiceTest {
 
   @Test
   void createUserNormalizesEmailAndCreatesGuest() {
-    when(appUserRepository.save(any(AppUser.class))).thenAnswer(invocation -> invocation.getArgument(0));
+    when(appUserRepository.save(any(AppUser.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
 
     AppUser user = service.createUser("TEST@EXAMPLE.COM");
 
