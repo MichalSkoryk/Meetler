@@ -56,13 +56,13 @@ class GroupServiceTest {
   }
 
   @Test
-  void updateGroupRejectsNonMember() {
+  void updateGroupRequiresAdmin() {
     AppUser user = user();
     Group group = group();
     UpdateGroupRequest request = new UpdateGroupRequest();
     request.setName("Updated");
     when(groupRepository.findById(group.getId())).thenReturn(Optional.of(group));
-    when(groupPermissionService.isMember(group, user)).thenReturn(false);
+    when(groupPermissionService.isAdmin(group, user)).thenReturn(false);
 
     assertThatThrownBy(() -> service.updateGroup(group.getId(), request, user))
         .isInstanceOf(IllegalArgumentException.class)

@@ -16,7 +16,7 @@ class FlywayMigrationIntegrationTest extends AbstractIntegrationTest {
         jdbcTemplate.queryForObject(
             "select count(*) from flyway_schema_history where success = true", Integer.class);
 
-    assertThat(successfulMigrations).isGreaterThanOrEqualTo(16);
+    assertThat(successfulMigrations).isGreaterThanOrEqualTo(17);
     assertThat(tableExists("app_user")).isTrue();
     assertThat(tableExists("calendar")).isTrue();
     assertThat(tableExists("availability_template")).isTrue();
@@ -24,6 +24,8 @@ class FlywayMigrationIntegrationTest extends AbstractIntegrationTest {
     assertThat(tableExists("group_member")).isTrue();
     assertThat(tableExists("guest_login_token")).isTrue();
     assertThat(tableExists("password_reset_token")).isTrue();
+    assertThat(tableExists("group_event")).isTrue();
+    assertThat(tableExists("group_event_participant")).isTrue();
   }
 
   private boolean tableExists(String tableName) {

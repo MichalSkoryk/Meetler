@@ -9,4 +9,6 @@ public class UpdateGroupRequest {
   @NotBlank
   @Size(max = 255)
   private String name;
+
+  private Boolean eventRequiresConfirmation;
 }

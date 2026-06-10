@@ -25,6 +25,9 @@ public class GroupService {
     Group group =
         Group.builder()
             .name(request.getName())
+            .eventRequiresConfirmation(
+                request.getEventRequiresConfirmation() == null
+                    || request.getEventRequiresConfirmation())
             .createdAt(OffsetDateTime.now())
             .updatedAt(OffsetDateTime.now())
             .build();
@@ -49,11 +52,14 @@ public class GroupService {
             .findById(groupId)
             .orElseThrow(() -> new IllegalArgumentException("Group not found"));
 
-    if (!groupPermissionService.isMember(group, user)) {
+    if (!groupPermissionService.isAdmin(group, user)) {
       throw new IllegalArgumentException("Not allowed");
     }
 
     group.setName(request.getName());
+    if (request.getEventRequiresConfirmation() != null) {
+      group.setEventRequiresConfirmation(request.getEventRequiresConfirmation());
+    }
     group.setUpdatedAt(OffsetDateTime.now());
 
     groupRepository.save(group);
@@ -79,6 +85,7 @@ public class GroupService {
         .id(group.getId())
         .name(group.getName())
         .role(role == null ? null : role.name())
+        .eventRequiresConfirmation(group.isEventRequiresConfirmation())
         .createdAt(group.getCreatedAt())
         .updatedAt(group.getUpdatedAt())
         .build();

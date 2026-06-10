@@ -11,6 +11,7 @@ public class GroupResponse {
   private UUID id;
   private String name;
   private String role;
+  private boolean eventRequiresConfirmation;
   private OffsetDateTime createdAt;
   private OffsetDateTime updatedAt;
 }

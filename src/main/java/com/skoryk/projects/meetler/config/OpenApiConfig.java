@@ -33,6 +33,9 @@ public class OpenApiConfig {
                     .description("Group role and ownership management"),
                 new Tag().name("Group Invites").description("Invites"),
                 new Tag().name("Group Members").description("Membership management"),
+                new Tag()
+                    .name("Group Events")
+                    .description("Group event proposals, confirmation, and event responses"),
                 new Tag().name("Calendars").description("CRUD for calendars"),
                 new Tag()
                     .name("External Calendar OAuth")

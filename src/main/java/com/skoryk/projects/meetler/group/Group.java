@@ -19,6 +19,9 @@ public class Group {
   @Column(nullable = false)
   private String name;
 
+  @Column(name = "event_requires_confirmation", nullable = false)
+  private boolean eventRequiresConfirmation;
+
   @Column(nullable = false)
   private OffsetDateTime createdAt;
 
