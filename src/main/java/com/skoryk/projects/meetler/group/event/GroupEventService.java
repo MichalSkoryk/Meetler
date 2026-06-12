@@ -170,6 +170,26 @@ public class GroupEventService {
     return toResponse(event);
   }
 
+  @Transactional
+  public void cancelEvent(UUID groupId, UUID eventId, AppUser user) {
+    Group group = getGroup(groupId);
+    GroupEvent groupEvent = eventRepository.findByIdAndGroup(eventId, group).orElseThrow(
+            () -> new IllegalArgumentException("Group event not found")
+    );
+
+    if(!groupEvent.getCreatedBy().getId().equals(user.getId()) && !groupPermissionService.isAdmin(group, user)){
+      throw new IllegalArgumentException("Not allowed");
+    }
+
+    if(groupEvent.getStatus() == GroupEventStatus.CANCELLED){
+      return;
+    }
+
+    groupEvent.setStatus(GroupEventStatus.CANCELLED);
+    eventRepository.save(groupEvent);
+
+  }
+
   private boolean allParticipantsAccepted(GroupEvent event) {
     return participantRepository.findByGroupEvent(event).stream()
         .allMatch(participant -> participant.getStatus() == GroupEventParticipantStatus.ACCEPTED);
@@ -218,4 +238,5 @@ public class GroupEventService {
         .respondedAt(participant.getRespondedAt())
         .build();
   }
+
 }

@@ -141,7 +141,6 @@ class GroupEventServiceTest {
         updateRequest("Updated dinner", "New description", event.getStartsAt(), event.getEndsAt());
 
     when(groupRepository.findById(group.getId())).thenReturn(Optional.of(group));
-    when(groupPermissionService.isAdmin(group, creator)).thenReturn(false);
     when(eventRepository.findByIdAndGroup(event.getId(), group)).thenReturn(Optional.of(event));
     when(participantRepository.findByGroupEvent(event)).thenReturn(List.of());
 
@@ -167,7 +166,6 @@ class GroupEventServiceTest {
     UpdateGroupEventRequest request = updateRequest("Dinner", "Moved", newStart, newEnd);
 
     when(groupRepository.findById(group.getId())).thenReturn(Optional.of(group));
-    when(groupPermissionService.isAdmin(group, creator)).thenReturn(false);
     when(eventRepository.findByIdAndGroup(event.getId(), group)).thenReturn(Optional.of(event));
     when(participantRepository.findByGroupEvent(event)).thenReturn(List.of());
 
@@ -273,6 +271,75 @@ class GroupEventServiceTest {
     verify(eventRepository, never()).save(any(GroupEvent.class));
     verify(participantRepository, never())
         .setParticipantStateInEvent(eq(event), any(GroupEventParticipantStatus.class), any());
+  }
+
+  @Test
+  void cancelEventAllowsCreatorToCancelOwnEvent() {
+    AppUser creator = user("creator@example.com");
+    Group group = group(true);
+    GroupEvent event = event(group, creator, true, GroupEventStatus.PENDING_CONFIRMATION);
+
+    when(groupRepository.findById(group.getId())).thenReturn(Optional.of(group));
+    when(eventRepository.findByIdAndGroup(event.getId(), group)).thenReturn(Optional.of(event));
+
+    service.cancelEvent(group.getId(), event.getId(), creator);
+
+    assertThat(event.getStatus()).isEqualTo(GroupEventStatus.CANCELLED);
+    verify(eventRepository).save(event);
+    verify(participantRepository, never())
+        .setParticipantStateInEvent(
+            any(GroupEvent.class), any(GroupEventParticipantStatus.class), any());
+  }
+
+  @Test
+  void cancelEventAllowsAdminToCancelAnotherUsersEvent() {
+    AppUser creator = user("creator@example.com");
+    AppUser admin = user("admin@example.com");
+    Group group = group(true);
+    GroupEvent event = event(group, creator, true, GroupEventStatus.CONFIRMED);
+
+    when(groupRepository.findById(group.getId())).thenReturn(Optional.of(group));
+    when(groupPermissionService.isAdmin(group, admin)).thenReturn(true);
+    when(eventRepository.findByIdAndGroup(event.getId(), group)).thenReturn(Optional.of(event));
+
+    service.cancelEvent(group.getId(), event.getId(), admin);
+
+    assertThat(event.getStatus()).isEqualTo(GroupEventStatus.CANCELLED);
+    verify(eventRepository).save(event);
+  }
+
+  @Test
+  void cancelEventRejectsUserWhoIsNotCreatorOrAdmin() {
+    AppUser creator = user("creator@example.com");
+    AppUser otherUser = user("other@example.com");
+    Group group = group(true);
+    GroupEvent event = event(group, creator, true, GroupEventStatus.CONFIRMED);
+
+    when(groupRepository.findById(group.getId())).thenReturn(Optional.of(group));
+    when(groupPermissionService.isAdmin(group, otherUser)).thenReturn(false);
+    when(eventRepository.findByIdAndGroup(event.getId(), group)).thenReturn(Optional.of(event));
+
+    assertThatThrownBy(() -> service.cancelEvent(group.getId(), event.getId(), otherUser))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("Not allowed");
+
+    assertThat(event.getStatus()).isEqualTo(GroupEventStatus.CONFIRMED);
+    verify(eventRepository, never()).save(any(GroupEvent.class));
+  }
+
+  @Test
+  void cancelEventIsIdempotentWhenEventIsAlreadyCancelled() {
+    AppUser creator = user("creator@example.com");
+    Group group = group(true);
+    GroupEvent event = event(group, creator, true, GroupEventStatus.CANCELLED);
+
+    when(groupRepository.findById(group.getId())).thenReturn(Optional.of(group));
+    when(eventRepository.findByIdAndGroup(event.getId(), group)).thenReturn(Optional.of(event));
+
+    service.cancelEvent(group.getId(), event.getId(), creator);
+
+    assertThat(event.getStatus()).isEqualTo(GroupEventStatus.CANCELLED);
+    verify(eventRepository, never()).save(any(GroupEvent.class));
   }
 
   private GroupEvent savedEvent(GroupEvent event) {
