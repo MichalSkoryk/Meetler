@@ -61,14 +61,10 @@ public interface GroupEventApi {
       @Valid @RequestBody RespondToGroupEventRequest request,
       @AuthenticationPrincipal AppUser user);
 
-  @Operation(
-          summary = "Cancel the event",
-          description = "Cancels the event")
+  @Operation(summary = "Cancel the event", description = "Cancels the event")
   @DeleteMapping("/{eventId}")
-          ResponseEntity<Void> cancelEvent(
-                  @PathVariable UUID groupId,
-                  @PathVariable UUID eventId,
-                  @AuthenticationPrincipal AppUser appUser
-  );
-
+  ResponseEntity<Void> cancelEvent(
+      @PathVariable UUID groupId,
+      @PathVariable UUID eventId,
+      @AuthenticationPrincipal AppUser appUser);
 }

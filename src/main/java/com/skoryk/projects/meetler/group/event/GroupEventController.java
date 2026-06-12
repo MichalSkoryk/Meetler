@@ -36,7 +36,6 @@ public class GroupEventController implements GroupEventApi {
     return ResponseEntity.ok(groupEventService.updateEvent(groupId, eventId, request, user));
   }
 
-
   @Override
   public ResponseEntity<GroupEventResponse> respond(
       UUID groupId, UUID eventId, RespondToGroupEventRequest request, AppUser user) {
@@ -44,9 +43,7 @@ public class GroupEventController implements GroupEventApi {
   }
 
   @Override
-  public ResponseEntity<Void> cancelEvent(
-          UUID groupId, UUID eventId, AppUser user
-  ) {
+  public ResponseEntity<Void> cancelEvent(UUID groupId, UUID eventId, AppUser user) {
     groupEventService.cancelEvent(groupId, eventId, user);
     return ResponseEntity.noContent().build();
   }
