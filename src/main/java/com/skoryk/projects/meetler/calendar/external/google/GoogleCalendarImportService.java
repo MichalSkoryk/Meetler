@@ -19,6 +19,7 @@ import com.skoryk.projects.meetler.user.AppUser;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -33,6 +34,7 @@ import org.springframework.web.client.RestClient;
 public class GoogleCalendarImportService {
 
   private static final String GOOGLE_CALENDAR_API = "https://www.googleapis.com/calendar/v3";
+  private static final int DEFAULT_IMPORT_WINDOW_MONTHS = 6;
 
   private final ExternalCalendarAccountRepository accountRepository;
   private final CalendarRepository calendarRepository;
@@ -44,7 +46,7 @@ public class GoogleCalendarImportService {
   @Transactional
   public ExternalCalendarImportResponse importCalendars(
       AppUser user, OffsetDateTime from, OffsetDateTime to) {
-    validateRange(from, to);
+    CalendarImportRange range = resolveImportRange(from, to);
 
     List<ExternalCalendarAccount> accounts =
         accountRepository.findByUserAndProviderAndRevokedAtIsNull(user, CalendarProvider.GOOGLE);
@@ -63,7 +65,8 @@ public class GoogleCalendarImportService {
       for (GoogleCalendarResponse googleCalendar : calendarList.getItems()) {
         Calendar calendar = upsertCalendar(user, account, googleCalendar);
         calendarsImported++;
-        eventsImported += importEvents(calendar, accessToken, googleCalendar.getId(), from, to);
+        eventsImported +=
+            importEvents(calendar, accessToken, googleCalendar.getId(), range.from(), range.to());
       }
 
       account.setLastSyncedAt(OffsetDateTime.now());
@@ -73,8 +76,8 @@ public class GoogleCalendarImportService {
         .accountsSynced(accounts.size())
         .calendarsImported(calendarsImported)
         .eventsImported(eventsImported)
-        .from(from)
-        .to(to)
+        .from(range.from())
+        .to(range.to())
         .build();
   }
 
@@ -222,12 +225,19 @@ public class GoogleCalendarImportService {
     return null;
   }
 
-  private void validateRange(OffsetDateTime from, OffsetDateTime to) {
-    if (from == null || to == null) {
-      throw new IllegalArgumentException("Calendar import requires from and to");
-    }
+  private CalendarImportRange resolveImportRange(
+      OffsetDateTime requestedFrom, OffsetDateTime requestedTo) {
+    OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+    OffsetDateTime from =
+        requestedFrom == null || requestedFrom.isBefore(now) ? now : requestedFrom;
+    OffsetDateTime to =
+        requestedTo == null ? from.plusMonths(DEFAULT_IMPORT_WINDOW_MONTHS) : requestedTo;
+
     if (!to.isAfter(from)) {
       throw new IllegalArgumentException("Calendar import range end must be after start");
     }
+    return new CalendarImportRange(from, to);
   }
+
+  private record CalendarImportRange(OffsetDateTime from, OffsetDateTime to) {}
 }

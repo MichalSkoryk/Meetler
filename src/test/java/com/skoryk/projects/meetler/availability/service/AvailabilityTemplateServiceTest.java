@@ -24,6 +24,7 @@ import com.skoryk.projects.meetler.availability.repository.AvailabilityTemplateR
 import com.skoryk.projects.meetler.availability.repository.AvailabilityTemplateSourceCalendarRepository;
 import com.skoryk.projects.meetler.availability.resolver.AvailabilityTemplateResolver;
 import com.skoryk.projects.meetler.calendar.CalendarRepository;
+import com.skoryk.projects.meetler.subscription.SubscriptionLimitService;
 import com.skoryk.projects.meetler.user.AppUser;
 import com.skoryk.projects.meetler.user.AppUserRole;
 import java.time.DayOfWeek;
@@ -50,6 +51,7 @@ class AvailabilityTemplateServiceTest {
   @Mock private AvailabilityTemplateSourceCalendarRepository sourceCalendarRepository;
   @Mock private CalendarRepository calendarRepository;
   @Mock private AvailabilityTemplateResolver resolver;
+  @Mock private SubscriptionLimitService subscriptionLimitService;
 
   @InjectMocks private AvailabilityTemplateService service;
 

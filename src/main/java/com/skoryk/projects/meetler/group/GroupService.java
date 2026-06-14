@@ -4,6 +4,7 @@ import com.skoryk.projects.meetler.group.dto.CreateGroupRequest;
 import com.skoryk.projects.meetler.group.dto.GroupResponse;
 import com.skoryk.projects.meetler.group.dto.UpdateGroupRequest;
 import com.skoryk.projects.meetler.group.member.*;
+import com.skoryk.projects.meetler.subscription.SubscriptionLimitService;
 import com.skoryk.projects.meetler.user.AppUser;
 import jakarta.transaction.Transactional;
 import java.time.OffsetDateTime;
@@ -20,8 +21,12 @@ public class GroupService {
   private final GroupPermissionService groupPermissionService;
   private final GroupMemberService groupMemberService;
   private final GroupMemberRepository groupMemberRepository;
+  private final SubscriptionLimitService subscriptionLimitService;
 
   public GroupResponse createGroup(CreateGroupRequest request, AppUser owner) {
+
+    subscriptionLimitService.assertCanCreateGroup(owner);
+
     Group group =
         Group.builder()
             .name(request.getName())

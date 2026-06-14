@@ -14,6 +14,7 @@ import com.skoryk.projects.meetler.group.member.GroupMemberRepository;
 import com.skoryk.projects.meetler.group.member.GroupMemberService;
 import com.skoryk.projects.meetler.group.member.GroupPermissionService;
 import com.skoryk.projects.meetler.group.member.GroupRole;
+import com.skoryk.projects.meetler.subscription.SubscriptionLimitService;
 import com.skoryk.projects.meetler.user.AppUser;
 import com.skoryk.projects.meetler.user.AppUserRole;
 import java.time.OffsetDateTime;
@@ -32,6 +33,7 @@ class GroupServiceTest {
   @Mock private GroupPermissionService groupPermissionService;
   @Mock private GroupMemberService groupMemberService;
   @Mock private GroupMemberRepository groupMemberRepository;
+  @Mock private SubscriptionLimitService subscriptionLimitService;
 
   @InjectMocks private GroupService service;
 
@@ -52,6 +54,7 @@ class GroupServiceTest {
 
     assertThat(response.getName()).isEqualTo("Friends");
     assertThat(response.getRole()).isEqualTo("OWNER");
+    verify(subscriptionLimitService).assertCanCreateGroup(owner);
     verify(groupMemberService).addMember(response.getId(), owner, GroupRole.OWNER);
   }
 

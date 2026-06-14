@@ -1,0 +1,43 @@
+name: Deploy Dev
+
+on:
+  push:
+    branches:
+      - develop
+    paths:
+      - "**"
+      - ".github/workflows/dev-deploy.yml"
+
+jobs:
+  test:
+    name: Test Spring Boot app
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: Meetler
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: maven
+
+      - name: Run tests
+        run: ./mvnw test
+
+  deploy-dev:
+    name: Trigger Render dev deploy
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - name: Trigger Render deploy hook
+        run: curl -fsS -X POST "$RENDER_DEPLOY_HOOK_URL_DEV"
+        env:
+          RENDER_DEPLOY_HOOK_URL_DEV: ${{ secrets.RENDER_DEPLOY_HOOK_URL_DEV }}

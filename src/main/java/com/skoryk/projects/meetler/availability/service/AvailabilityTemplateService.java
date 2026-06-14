@@ -6,6 +6,7 @@ import com.skoryk.projects.meetler.availability.repository.*;
 import com.skoryk.projects.meetler.availability.resolver.AvailabilityTemplateResolver;
 import com.skoryk.projects.meetler.calendar.Calendar;
 import com.skoryk.projects.meetler.calendar.CalendarRepository;
+import com.skoryk.projects.meetler.subscription.SubscriptionLimitService;
 import com.skoryk.projects.meetler.user.AppUser;
 import com.skoryk.projects.meetler.user.AppUserRole;
 import java.time.DateTimeException;
@@ -37,10 +38,12 @@ public class AvailabilityTemplateService {
   private final AvailabilityTemplateSourceCalendarRepository sourceCalendarRepository;
   private final CalendarRepository calendarRepository;
   private final AvailabilityTemplateResolver resolver;
+  private final SubscriptionLimitService subscriptionLimitService;
 
   @Transactional
   public AvailabilityTemplateResponse createTemplate(
       AppUser user, CreateAvailabilityTemplateRequest request) {
+    subscriptionLimitService.assertCanCreateAvailabilityTemplate(user);
     validateTimezone(request.getTimezone());
     validateDefaultAvailabilityStatus(request.getDefaultAvailabilityStatus());
     validateGuestTemplateLimit(user);

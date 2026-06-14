@@ -43,7 +43,11 @@ public class OpenApiConfig {
                 new Tag()
                     .name("Availability Templates")
                     .description(
-                        "Availability templates, one-off blocks, recurring rules, source calendars, and resolved availability windows")))
+                        "Availability templates, one-off blocks, recurring rules, source calendars, and resolved availability windows"),
+                new Tag()
+                    .name("Subscriptions")
+                    .description(
+                        "Subscription usage and application-admin subscription management")))
         .addSecurityItem(new SecurityRequirement().addList(securitySchemeName))
         .components(
             new Components()

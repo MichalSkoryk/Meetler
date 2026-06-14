@@ -34,10 +34,10 @@ public interface ExternalCalendarOAuthApi {
   @Operation(
       summary = "Import Google calendars and events",
       description =
-          "Imports calendars and busy/free events from connected Google Calendar accounts for the requested date-time range.")
+          "Imports calendars and busy/free events from connected Google Calendar accounts. If no range is supplied, the next 6 months are imported. Past starts are clamped to the current time.")
   @PostMapping("/google/import")
   ResponseEntity<ExternalCalendarImportResponse> importGoogleCalendars(
-      @RequestParam OffsetDateTime from,
-      @RequestParam OffsetDateTime to,
+      @RequestParam(required = false) OffsetDateTime from,
+      @RequestParam(required = false) OffsetDateTime to,
       @AuthenticationPrincipal AppUser user);
 }
