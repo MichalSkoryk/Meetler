@@ -3,10 +3,9 @@ name: Deploy Dev
 on:
   push:
     branches:
-      - develop
+      - dev
     paths:
       - "**"
-      - ".github/workflows/dev-deploy.yml"
 
 jobs:
   test:
@@ -15,7 +14,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: Meetler
+        working-directory: .
 
     steps:
       - name: Checkout
