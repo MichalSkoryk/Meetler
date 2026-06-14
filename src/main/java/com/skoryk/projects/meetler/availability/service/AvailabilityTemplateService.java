@@ -43,10 +43,10 @@ public class AvailabilityTemplateService {
   @Transactional
   public AvailabilityTemplateResponse createTemplate(
       AppUser user, CreateAvailabilityTemplateRequest request) {
+    validateGuestTemplateLimit(user);
     subscriptionLimitService.assertCanCreateAvailabilityTemplate(user);
     validateTimezone(request.getTimezone());
     validateDefaultAvailabilityStatus(request.getDefaultAvailabilityStatus());
-    validateGuestTemplateLimit(user);
 
     if (request.isDefault()) {
       templateRepository.clearDefaultForUser(user);

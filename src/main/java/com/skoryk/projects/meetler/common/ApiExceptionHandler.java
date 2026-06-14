@@ -1,5 +1,6 @@
 package com.skoryk.projects.meetler.common;
 
+import com.skoryk.projects.meetler.subscription.SubscriptionLimitExceededException;
 import jakarta.validation.ConstraintViolationException;
 import java.time.OffsetDateTime;
 import java.util.LinkedHashMap;
@@ -47,8 +48,8 @@ public class ApiExceptionHandler {
     return error(HttpStatus.BAD_REQUEST, ex.getMessage(), null);
   }
 
-  @ExceptionHandler(IllegalStateException.class)
-  public ResponseEntity<Map<String, Object>> handleConflict(IllegalStateException ex) {
+  @ExceptionHandler({IllegalStateException.class, SubscriptionLimitExceededException.class})
+  public ResponseEntity<Map<String, Object>> handleConflict(RuntimeException ex) {
     return error(HttpStatus.CONFLICT, ex.getMessage(), null);
   }
 
