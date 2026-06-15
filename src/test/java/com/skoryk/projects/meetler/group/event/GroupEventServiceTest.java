@@ -15,6 +15,7 @@ import com.skoryk.projects.meetler.group.event.dto.CreateGroupEventRequest;
 import com.skoryk.projects.meetler.group.event.dto.GroupEventResponse;
 import com.skoryk.projects.meetler.group.event.dto.RespondToGroupEventRequest;
 import com.skoryk.projects.meetler.group.event.dto.UpdateGroupEventRequest;
+import com.skoryk.projects.meetler.group.event.sync.GoogleGroupEventExportService;
 import com.skoryk.projects.meetler.group.member.GroupMember;
 import com.skoryk.projects.meetler.group.member.GroupMemberRepository;
 import com.skoryk.projects.meetler.group.member.GroupPermissionService;
@@ -40,6 +41,7 @@ class GroupEventServiceTest {
   @Mock private GroupPermissionService groupPermissionService;
   @Mock private GroupEventRepository eventRepository;
   @Mock private GroupEventParticipantRepository participantRepository;
+  @Mock private GoogleGroupEventExportService googleGroupEventExportService;
 
   @InjectMocks private GroupEventService service;
 
@@ -202,6 +204,7 @@ class GroupEventServiceTest {
         .setParticipantStateInEvent(
             eq(event), eq(GroupEventParticipantStatus.ACCEPTED), any(OffsetDateTime.class));
     verify(eventRepository).save(event);
+    verify(googleGroupEventExportService).synchronizeExistingGoogleExports(event);
   }
 
   @Test
@@ -286,6 +289,7 @@ class GroupEventServiceTest {
 
     assertThat(event.getStatus()).isEqualTo(GroupEventStatus.CANCELLED);
     verify(eventRepository).save(event);
+    verify(googleGroupEventExportService).deleteExistingGoogleExports(event);
     verify(participantRepository, never())
         .setParticipantStateInEvent(
             any(GroupEvent.class), any(GroupEventParticipantStatus.class), any());

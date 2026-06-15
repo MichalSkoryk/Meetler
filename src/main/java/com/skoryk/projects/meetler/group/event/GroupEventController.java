@@ -1,9 +1,11 @@
 package com.skoryk.projects.meetler.group.event;
 
 import com.skoryk.projects.meetler.group.event.dto.CreateGroupEventRequest;
+import com.skoryk.projects.meetler.group.event.dto.ExportGroupEventResponse;
 import com.skoryk.projects.meetler.group.event.dto.GroupEventResponse;
 import com.skoryk.projects.meetler.group.event.dto.RespondToGroupEventRequest;
 import com.skoryk.projects.meetler.group.event.dto.UpdateGroupEventRequest;
+import com.skoryk.projects.meetler.group.event.sync.GoogleGroupEventExportService;
 import com.skoryk.projects.meetler.user.AppUser;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -17,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class GroupEventController implements GroupEventApi {
 
   private final GroupEventService groupEventService;
+  private final GoogleGroupEventExportService googleGroupEventExportService;
 
   @Override
   public ResponseEntity<GroupEventResponse> createEvent(
@@ -46,5 +49,11 @@ public class GroupEventController implements GroupEventApi {
   public ResponseEntity<Void> cancelEvent(UUID groupId, UUID eventId, AppUser user) {
     groupEventService.cancelEvent(groupId, eventId, user);
     return ResponseEntity.noContent().build();
+  }
+
+  @Override
+  public ResponseEntity<ExportGroupEventResponse> exportToGoogle(
+      UUID groupId, UUID eventId, AppUser user) {
+    return ResponseEntity.ok(googleGroupEventExportService.exportToGoogle(groupId, eventId, user));
   }
 }

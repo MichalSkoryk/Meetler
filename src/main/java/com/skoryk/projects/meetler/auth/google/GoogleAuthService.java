@@ -1,6 +1,7 @@
 package com.skoryk.projects.meetler.auth.google;
 
 import com.skoryk.projects.meetler.auth.AuthService;
+import com.skoryk.projects.meetler.auth.OAuthLoginResult;
 import com.skoryk.projects.meetler.auth.dto.AuthResponse;
 import com.skoryk.projects.meetler.calendar.external.oauth.GoogleTokenResponse;
 import com.skoryk.projects.meetler.calendar.external.oauth.GoogleUserInfoResponse;
@@ -27,10 +28,10 @@ public class GoogleAuthService {
   private final AuthService authService;
   private final RestClient restClient = RestClient.create();
 
-  public URI buildAuthorizationUri() {
+  public URI buildAuthorizationUri(String returnUrl) {
     requireConfigured();
 
-    String state = stateService.createState(PURPOSE, PROVIDER);
+    String state = stateService.createState(PURPOSE, PROVIDER, returnUrl);
 
     return UriComponentsBuilder.fromUriString(properties.getAuthorizationUri())
         .queryParam("client_id", properties.getClientId())
@@ -43,9 +44,9 @@ public class GoogleAuthService {
         .toUri();
   }
 
-  public AuthResponse handleCallback(String code, String state) {
+  public OAuthLoginResult handleCallbackWithRedirect(String code, String state) {
     requireConfigured();
-    stateService.validateState(state, PURPOSE, PROVIDER);
+    String returnUrl = stateService.validatePurposeStateWithReturnUrl(state, PURPOSE, PROVIDER);
 
     GoogleTokenResponse tokenResponse = exchangeCodeForTokens(code);
     GoogleUserInfoResponse userInfo = fetchUserInfo(tokenResponse.getAccessToken());
@@ -62,8 +63,10 @@ public class GoogleAuthService {
       throw new IllegalArgumentException("Google email is not verified");
     }
 
-    return authService.authenticateGoogleUser(
-        userInfo.getSub(), userInfo.getEmail(), userInfo.getName());
+    AuthResponse authResponse =
+        authService.authenticateGoogleUser(
+            userInfo.getSub(), userInfo.getEmail(), userInfo.getName());
+    return new OAuthLoginResult(authResponse, returnUrl);
   }
 
   private GoogleTokenResponse exchangeCodeForTokens(String code) {

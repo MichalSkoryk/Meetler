@@ -1,6 +1,7 @@
 package com.skoryk.projects.meetler.group.event;
 
 import com.skoryk.projects.meetler.group.event.dto.CreateGroupEventRequest;
+import com.skoryk.projects.meetler.group.event.dto.ExportGroupEventResponse;
 import com.skoryk.projects.meetler.group.event.dto.GroupEventResponse;
 import com.skoryk.projects.meetler.group.event.dto.RespondToGroupEventRequest;
 import com.skoryk.projects.meetler.group.event.dto.UpdateGroupEventRequest;
@@ -64,6 +65,16 @@ public interface GroupEventApi {
   @Operation(summary = "Cancel the event", description = "Cancels the event")
   @DeleteMapping("/{eventId}")
   ResponseEntity<Void> cancelEvent(
+      @PathVariable UUID groupId,
+      @PathVariable UUID eventId,
+      @AuthenticationPrincipal AppUser appUser);
+
+  @Operation(
+      summary = "Export group event to Google Calendar",
+      description =
+          "Creates or updates the event in the authenticated user's Google calendar named Meetler.")
+  @PostMapping("/{eventId}/google/export")
+  ResponseEntity<ExportGroupEventResponse> exportToGoogle(
       @PathVariable UUID groupId,
       @PathVariable UUID eventId,
       @AuthenticationPrincipal AppUser appUser);

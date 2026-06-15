@@ -23,10 +23,6 @@ public class OAuthStateService {
     this.signingKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtSecret));
   }
 
-  public String createState(UUID userId, String provider) {
-    return createState(userId, provider, null);
-  }
-
   public String createState(UUID userId, String provider, String returnUrl) {
     Date now = new Date();
     Date expiresAt = new Date(now.getTime() + STATE_TTL.toMillis());
@@ -47,21 +43,24 @@ public class OAuthStateService {
     return builder.compact();
   }
 
-  public String createState(String purpose, String provider) {
+  public String createState(String purpose, String provider, String returnUrl) {
     Date now = new Date();
     Date expiresAt = new Date(now.getTime() + STATE_TTL.toMillis());
+    String normalizedReturnUrl = normalizeReturnUrl(returnUrl);
 
-    return Jwts.builder()
-        .subject(purpose)
-        .claim("provider", provider)
-        .issuedAt(now)
-        .expiration(expiresAt)
-        .signWith(signingKey)
-        .compact();
-  }
+    var builder =
+        Jwts.builder()
+            .subject(purpose)
+            .claim("provider", provider)
+            .issuedAt(now)
+            .expiration(expiresAt)
+            .signWith(signingKey);
 
-  public UUID validateState(String state, String expectedProvider) {
-    return validateStateWithReturnUrl(state, expectedProvider).userId();
+    if (normalizedReturnUrl != null) {
+      builder.claim("returnUrl", normalizedReturnUrl);
+    }
+
+    return builder.compact();
   }
 
   public OAuthUserState validateStateWithReturnUrl(String state, String expectedProvider) {
@@ -78,7 +77,8 @@ public class OAuthStateService {
         normalizeReturnUrl(claims.get("returnUrl", String.class)));
   }
 
-  public void validateState(String state, String expectedPurpose, String expectedProvider) {
+  public String validatePurposeStateWithReturnUrl(
+      String state, String expectedPurpose, String expectedProvider) {
     Claims claims =
         Jwts.parser().verifyWith(signingKey).build().parseSignedClaims(state).getPayload();
 
@@ -86,6 +86,8 @@ public class OAuthStateService {
     if (!expectedProvider.equals(provider) || !expectedPurpose.equals(claims.getSubject())) {
       throw new IllegalArgumentException("Invalid OAuth state");
     }
+
+    return normalizeReturnUrl(claims.get("returnUrl", String.class));
   }
 
   private String normalizeReturnUrl(String returnUrl) {
@@ -97,6 +99,10 @@ public class OAuthStateService {
     if (uri.isAbsolute()) {
       String scheme = uri.getScheme();
       String host = uri.getHost();
+      if ("meetler".equalsIgnoreCase(scheme)) {
+        return uri.toString();
+      }
+
       boolean localHost =
           "localhost".equalsIgnoreCase(host) || "127.0.0.1".equals(host) || "::1".equals(host);
       if (("http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme)) && localHost) {

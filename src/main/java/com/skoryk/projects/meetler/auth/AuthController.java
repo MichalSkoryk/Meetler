@@ -15,8 +15,10 @@ import com.skoryk.projects.meetler.auth.microsoft.MicrosoftAuthService;
 import com.skoryk.projects.meetler.auth.password.PasswordResetService;
 import java.net.URI;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.util.UriComponentsBuilder;
 
 @RestController
 @RequiredArgsConstructor
@@ -27,6 +29,9 @@ public class AuthController implements AuthApi {
   private final PasswordResetService passwordResetService;
   private final GoogleAuthService googleAuthService;
   private final MicrosoftAuthService microsoftAuthService;
+
+  @Value("${auth.password-reset.frontend-url:http://localhost:8081}")
+  private String passwordResetFrontendUrl;
 
   @Override
   public ResponseEntity<AuthResponse> register(RegisterRequest request) {
@@ -74,13 +79,24 @@ public class AuthController implements AuthApi {
   }
 
   @Override
-  public ResponseEntity<Void> googleLogin() {
-    URI authorizationUri = googleAuthService.buildAuthorizationUri();
+  public ResponseEntity<Void> openPasswordResetPage(String token) {
+    URI redirectUri =
+        UriComponentsBuilder.fromUriString(passwordResetFrontendUrl)
+            .queryParam("resetPassword", "true")
+            .queryParam("token", token)
+            .build()
+            .toUri();
+    return ResponseEntity.status(302).location(redirectUri).build();
+  }
+
+  @Override
+  public ResponseEntity<Void> googleLogin(String returnUrl) {
+    URI authorizationUri = googleAuthService.buildAuthorizationUri(returnUrl);
     return ResponseEntity.status(302).location(authorizationUri).build();
   }
 
   @Override
-  public ResponseEntity<AuthResponse> googleCallback(
+  public ResponseEntity<?> googleCallback(
       String code, String state, String error, String errorDescription) {
     if (error != null) {
       throw new IllegalArgumentException(
@@ -90,17 +106,17 @@ public class AuthController implements AuthApi {
       throw new IllegalArgumentException(
           "Google OAuth callback did not include an authorization code");
     }
-    return ResponseEntity.ok(googleAuthService.handleCallback(code, state));
+    return oauthLoginResponse(googleAuthService.handleCallbackWithRedirect(code, state));
   }
 
   @Override
-  public ResponseEntity<Void> microsoftLogin() {
-    URI authorizationUri = microsoftAuthService.buildAuthorizationUri();
+  public ResponseEntity<Void> microsoftLogin(String returnUrl) {
+    URI authorizationUri = microsoftAuthService.buildAuthorizationUri(returnUrl);
     return ResponseEntity.status(302).location(authorizationUri).build();
   }
 
   @Override
-  public ResponseEntity<AuthResponse> microsoftCallback(
+  public ResponseEntity<?> microsoftCallback(
       String code, String state, String error, String errorDescription) {
     if (error != null) {
       throw new IllegalArgumentException(
@@ -110,7 +126,21 @@ public class AuthController implements AuthApi {
       throw new IllegalArgumentException(
           "Microsoft OAuth callback did not include an authorization code");
     }
-    return ResponseEntity.ok(microsoftAuthService.handleCallback(code, state));
+    return oauthLoginResponse(microsoftAuthService.handleCallbackWithRedirect(code, state));
+  }
+
+  private ResponseEntity<?> oauthLoginResponse(OAuthLoginResult result) {
+    if (result.returnUrl() == null) {
+      return ResponseEntity.ok(result.authResponse());
+    }
+
+    URI redirectUri =
+        org.springframework.web.util.UriComponentsBuilder.fromUriString(result.returnUrl())
+            .queryParam("accessToken", result.authResponse().getAccessToken())
+            .queryParam("refreshToken", result.authResponse().getRefreshToken())
+            .build()
+            .toUri();
+    return ResponseEntity.status(302).location(redirectUri).build();
   }
 
   private String oauthError(String error, String errorDescription) {

@@ -26,6 +26,14 @@ http://localhost:8081
 
 The test site supports email/password login, logout, Google login, Microsoft login, and Google Calendar connection testing.
 
+## Mobile client documentation
+
+Phone app integration notes are available in:
+
+```text
+docs/phone-developers/README.md
+```
+
 ## Integration keys
 
 Google and Microsoft OAuth client IDs/secrets are not committed to the repository.

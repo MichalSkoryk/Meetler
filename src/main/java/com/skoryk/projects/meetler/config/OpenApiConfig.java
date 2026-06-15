@@ -26,6 +26,9 @@ public class OpenApiConfig {
         .tags(
             List.of(
                 new Tag().name("Authentication").description("Auth endpoints"),
+                new Tag()
+                    .name("Me")
+                    .description("Authenticated user bootstrap and self-service endpoints"),
                 new Tag().name("User Management").description("Application user management"),
                 new Tag().name("Groups").description("Group management"),
                 new Tag()

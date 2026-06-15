@@ -3,6 +3,7 @@ package com.skoryk.projects.meetler.group.event;
 import com.skoryk.projects.meetler.group.Group;
 import com.skoryk.projects.meetler.group.GroupRepository;
 import com.skoryk.projects.meetler.group.event.dto.*;
+import com.skoryk.projects.meetler.group.event.sync.GoogleGroupEventExportService;
 import com.skoryk.projects.meetler.group.member.GroupMember;
 import com.skoryk.projects.meetler.group.member.GroupMemberRepository;
 import com.skoryk.projects.meetler.group.member.GroupPermissionService;
@@ -23,6 +24,7 @@ public class GroupEventService {
   private final GroupPermissionService groupPermissionService;
   private final GroupEventRepository eventRepository;
   private final GroupEventParticipantRepository participantRepository;
+  private final GoogleGroupEventExportService googleGroupEventExportService;
 
   @Transactional
   public GroupEventResponse createEvent(
@@ -128,6 +130,7 @@ public class GroupEventService {
     }
 
     eventRepository.save(groupEvent);
+    googleGroupEventExportService.synchronizeExistingGoogleExports(groupEvent);
 
     return toResponse(groupEvent);
   }
@@ -189,6 +192,7 @@ public class GroupEventService {
 
     groupEvent.setStatus(GroupEventStatus.CANCELLED);
     eventRepository.save(groupEvent);
+    googleGroupEventExportService.deleteExistingGoogleExports(groupEvent);
   }
 
   private boolean allParticipantsAccepted(GroupEvent event) {

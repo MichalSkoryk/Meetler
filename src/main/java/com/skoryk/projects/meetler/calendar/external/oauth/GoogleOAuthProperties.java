@@ -23,6 +23,7 @@ public class GoogleOAuthProperties {
           "openid",
           "email",
           "profile",
-          "https://www.googleapis.com/auth/calendar.readonly",
-          "https://www.googleapis.com/auth/calendar.events");
+          "https://www.googleapis.com/auth/calendar.calendarlist.readonly",
+          "https://www.googleapis.com/auth/calendar.events.readonly",
+          "https://www.googleapis.com/auth/calendar.app.created");
 }

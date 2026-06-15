@@ -1,6 +1,7 @@
 package com.skoryk.projects.meetler.auth.microsoft;
 
 import com.skoryk.projects.meetler.auth.AuthService;
+import com.skoryk.projects.meetler.auth.OAuthLoginResult;
 import com.skoryk.projects.meetler.auth.dto.AuthResponse;
 import com.skoryk.projects.meetler.calendar.external.oauth.OAuthStateService;
 import java.net.URI;
@@ -25,10 +26,10 @@ public class MicrosoftAuthService {
   private final AuthService authService;
   private final RestClient restClient = RestClient.create();
 
-  public URI buildAuthorizationUri() {
+  public URI buildAuthorizationUri(String returnUrl) {
     requireConfigured();
 
-    String state = stateService.createState(PURPOSE, PROVIDER);
+    String state = stateService.createState(PURPOSE, PROVIDER, returnUrl);
 
     return UriComponentsBuilder.fromUriString(properties.getAuthorizationUri())
         .queryParam("client_id", properties.getClientId())
@@ -42,9 +43,9 @@ public class MicrosoftAuthService {
         .toUri();
   }
 
-  public AuthResponse handleCallback(String code, String state) {
+  public OAuthLoginResult handleCallbackWithRedirect(String code, String state) {
     requireConfigured();
-    stateService.validateState(state, PURPOSE, PROVIDER);
+    String returnUrl = stateService.validatePurposeStateWithReturnUrl(state, PURPOSE, PROVIDER);
 
     MicrosoftTokenResponse tokenResponse = exchangeCodeForTokens(code);
     MicrosoftUserInfoResponse userInfo = fetchUserInfo(tokenResponse.getAccessToken());
@@ -58,7 +59,9 @@ public class MicrosoftAuthService {
       throw new IllegalArgumentException("Microsoft user id was not returned");
     }
 
-    return authService.authenticateMicrosoftUser(userInfo.getSub(), email, userInfo.getName());
+    AuthResponse authResponse =
+        authService.authenticateMicrosoftUser(userInfo.getSub(), email, userInfo.getName());
+    return new OAuthLoginResult(authResponse, returnUrl);
   }
 
   private MicrosoftTokenResponse exchangeCodeForTokens(String code) {

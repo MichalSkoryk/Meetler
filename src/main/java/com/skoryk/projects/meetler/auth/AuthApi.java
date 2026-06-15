@@ -78,17 +78,24 @@ public interface AuthApi {
       @Valid @RequestBody PasswordResetConfirmRequest request);
 
   @Operation(
+      summary = "Open password reset page",
+      description =
+          "Browser landing endpoint for emailed reset links. Redirects to the configured frontend reset page with the token.")
+  @GetMapping("/password/reset/confirm")
+  ResponseEntity<Void> openPasswordResetPage(@RequestParam String token);
+
+  @Operation(
       summary = "Start Google login",
       description = "Redirects the browser to Google's OAuth consent screen for application login.")
   @GetMapping("/google/login")
-  ResponseEntity<Void> googleLogin();
+  ResponseEntity<Void> googleLogin(@RequestParam(required = false) String returnUrl);
 
   @Operation(
       summary = "Handle Google login callback",
       description =
           "Completes Google OAuth login after Google redirects back with an authorization code.")
   @GetMapping("/google/callback")
-  ResponseEntity<AuthResponse> googleCallback(
+  ResponseEntity<?> googleCallback(
       @RequestParam(required = false) String code,
       @RequestParam String state,
       @RequestParam(required = false) String error,
@@ -99,14 +106,14 @@ public interface AuthApi {
       description =
           "Redirects the browser to Microsoft's OAuth consent screen for application login.")
   @GetMapping("/microsoft/login")
-  ResponseEntity<Void> microsoftLogin();
+  ResponseEntity<Void> microsoftLogin(@RequestParam(required = false) String returnUrl);
 
   @Operation(
       summary = "Handle Microsoft login callback",
       description =
           "Completes Microsoft OAuth login after Microsoft redirects back with an authorization code.")
   @GetMapping("/microsoft/callback")
-  ResponseEntity<AuthResponse> microsoftCallback(
+  ResponseEntity<?> microsoftCallback(
       @RequestParam(required = false) String code,
       @RequestParam String state,
       @RequestParam(required = false) String error,

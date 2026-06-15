@@ -1,5 +1,6 @@
 package com.skoryk.projects.meetler.calendar;
 
+import com.skoryk.projects.meetler.calendar.external.ExternalCalendarAccount;
 import com.skoryk.projects.meetler.user.AppUser;
 import java.util.List;
 import java.util.Optional;
@@ -12,4 +13,19 @@ public interface CalendarRepository extends JpaRepository<Calendar, UUID> {
 
   Optional<Calendar> findByUserAndProviderAndExternalId(
       AppUser user, CalendarProvider provider, String externalId);
+
+  Optional<Calendar>
+      findFirstByUserAndProviderAndExternalCalendarAccountAndSyncDirectionAndNameOrderByUpdatedAtDesc(
+          AppUser user,
+          CalendarProvider provider,
+          ExternalCalendarAccount externalCalendarAccount,
+          CalendarSynchronizationType syncDirection,
+          String name);
+
+  Optional<Calendar>
+      findFirstByUserAndProviderAndExternalCalendarAccountAndNameOrderByUpdatedAtDesc(
+          AppUser user,
+          CalendarProvider provider,
+          ExternalCalendarAccount externalCalendarAccount,
+          String name);
 }

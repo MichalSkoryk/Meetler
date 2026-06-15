@@ -292,6 +292,14 @@
         document.cookie = `${name}=; Path=/; Max-Age=0; SameSite=Lax`;
       }
 
+      function consoleReturnUrl(marker) {
+        const url = new URL(window.location.href);
+        url.search = "";
+        url.hash = "";
+        url.searchParams.set("returnedFrom", marker);
+        return url.toString();
+      }
+
       function pretty(value) {
         return typeof value === "string" ? value : JSON.stringify(value, null, 2);
       }
@@ -340,8 +348,29 @@
         const [groupsOutput, setGroupsOutput] = useState(null);
         const [gridRows, setGridRows] = useState([]);
         const [groupEvents, setGroupEvents] = useState([]);
+        const [calendarId, setCalendarId] = useState("");
 
         const [auth, setAuth] = useState({ email: "", name: "", password: "" });
+        const [guestAuth, setGuestAuth] = useState({
+          email: "michal.skoryk@gmail.com",
+          name: "Michal Guest",
+          loginLink: "",
+          token: "",
+        });
+        const [passwordReset, setPasswordReset] = useState({
+          email: "michal.skoryk@gmail.com",
+          resetLink: "",
+          token: "",
+          newPassword: "",
+        });
+        const [userTools, setUserTools] = useState({
+          email: "michal.skoryk@gmail.com",
+          userId: "",
+          name: "Michal Test",
+          currentPassword: "",
+          newPassword: "",
+          initialPassword: "",
+        });
         const [calendarForm, setCalendarForm] = useState({
           name: "Internal calendar",
           provider: "INTERNAL",
@@ -397,11 +426,40 @@
         const hasToken = Boolean(accessToken);
 
         useEffect(() => {
+          const params = new URLSearchParams(window.location.search);
+          const returnedAccess = params.get("accessToken");
+          const returnedRefresh = params.get("refreshToken");
+          const returnedFrom = params.get("returnedFrom");
+          const resetPassword = params.get("resetPassword");
+          const resetToken = params.get("token");
+
+          if (returnedAccess && returnedRefresh) {
+            saveTokens({ accessToken: returnedAccess, refreshToken: returnedRefresh });
+            setTab("auth");
+            setOutput(`OAuth login completed from ${returnedFrom || "provider"}. Tokens saved.`);
+            window.history.replaceState({}, document.title, window.location.pathname);
+            return;
+          }
+
+          if (resetPassword === "true" && resetToken) {
+            setTab("auth");
+            setPasswordReset((current) => ({ ...current, token: resetToken }));
+            setOutput("Password reset token loaded from email link. Enter a new password and click Confirm Reset.");
+            window.history.replaceState({}, document.title, window.location.pathname);
+            return;
+          }
+
           const savedAccess = localStorage.getItem("meetler.accessToken") || "";
           const savedRefresh = localStorage.getItem("meetler.refreshToken") || "";
           setAccessToken(savedAccess);
           setRefreshToken(savedRefresh);
           setCookie("meetler_access_token", savedAccess);
+
+          if (returnedFrom === "google-calendar-connect") {
+            setTab("calendars");
+            setOutput("Google Calendar connection returned to the test site. Click Import Google Events to pull calendars/events.");
+            window.history.replaceState({}, document.title, window.location.pathname);
+          }
         }, []);
 
         function resetWorkspaceState() {
@@ -409,6 +467,7 @@
           setTemplates([]);
           setGroups([]);
           setGroupMembers([]);
+          setCalendarId("");
           setTemplateId("");
           setSourceCalendarId("");
           setAdminUserId("");
@@ -473,6 +532,9 @@
         async function refreshCalendars() {
           const data = await api("/calendars");
           setCalendars(data || []);
+          if (!data?.some((calendar) => calendar.id === calendarId)) {
+            setCalendarId(data?.[0]?.id || "");
+          }
           return data || [];
         }
 
@@ -525,6 +587,137 @@
             setEventForm((current) => ({ ...current, eventId: items[0]?.id || "" }));
           }
           return items;
+        }
+
+        async function refreshBootstrap() {
+          const data = await api("/me/bootstrap");
+          return data;
+        }
+
+        async function refreshAccessToken() {
+          if (!refreshToken) {
+            setOutput("No refresh token saved.");
+            return;
+          }
+          const data = await api("/auth/refresh", {
+            method: "POST",
+            body: JSON.stringify({ refreshToken }),
+          });
+          saveTokens(data);
+          setOutput(pretty(data));
+        }
+
+        function startOAuthLogin(provider) {
+          const returnUrl = encodeURIComponent(consoleReturnUrl(`${provider}-login`));
+          window.location.href = `/api/auth/${provider}/login?returnUrl=${returnUrl}`;
+        }
+
+        function tokenFromLink(link) {
+          if (!link) return "";
+          try {
+            return new URL(link, window.location.origin).searchParams.get("token") || "";
+          } catch (error) {
+            return "";
+          }
+        }
+
+        async function requestGuestLogin() {
+          const data = await api("/auth/guest/request-login", {
+            method: "POST",
+            body: JSON.stringify({
+              email: guestAuth.email,
+              name: guestAuth.name || null,
+            }),
+          });
+          const loginLink = data?.loginLink || "";
+          setGuestAuth((current) => ({
+            ...current,
+            loginLink,
+            token: tokenFromLink(loginLink),
+          }));
+          setOutput(pretty(data));
+        }
+
+        async function loginAsGuest() {
+          const token = guestAuth.token || tokenFromLink(guestAuth.loginLink);
+          if (!token) {
+            setOutput("Guest login token is missing. Request a login link first or paste the token.");
+            return;
+          }
+          const data = await api(`/auth/guest/login?token=${encodeURIComponent(token)}`);
+          saveTokens(data);
+          setOutput(pretty(data));
+        }
+
+        async function requestPasswordReset() {
+          const data = await api("/auth/password/reset/request", {
+            method: "POST",
+            body: JSON.stringify({ email: passwordReset.email }),
+          });
+          const resetLink = data?.resetLink || "";
+          setPasswordReset((current) => ({
+            ...current,
+            resetLink,
+            token: tokenFromLink(resetLink),
+          }));
+          setOutput(pretty(data));
+        }
+
+        async function confirmPasswordReset() {
+          const token = passwordReset.token || tokenFromLink(passwordReset.resetLink);
+          if (!token) {
+            setOutput("Password reset token is missing. Request a reset link first or paste the token.");
+            return;
+          }
+          await api("/auth/password/reset/confirm", {
+            method: "POST",
+            body: JSON.stringify({
+              token,
+              newPassword: passwordReset.newPassword,
+            }),
+          });
+          setOutput("Password reset confirmed. Log in with the new password.");
+        }
+
+        async function lookupUserByEmail() {
+          const data = await api(`/users/by-email?email=${encodeURIComponent(userTools.email)}`);
+          setUserTools((current) => ({ ...current, userId: data?.id || current.userId }));
+          return data;
+        }
+
+        async function createUserShell() {
+          const data = await api("/users", {
+            method: "POST",
+            body: JSON.stringify({ email: userTools.email }),
+          });
+          setUserTools((current) => ({ ...current, userId: data?.id || current.userId }));
+          return data;
+        }
+
+        function startGoogleCalendarConnect() {
+          const token = localStorage.getItem("meetler.accessToken") || accessToken;
+          if (!token) {
+            setOutput("Login first, or paste and save an access token.");
+            return;
+          }
+          setCookie("meetler_access_token", token);
+          const returnUrl = encodeURIComponent(consoleReturnUrl("google-calendar-connect"));
+          window.location.href = `/api/external-calendars/google/connect?returnUrl=${returnUrl}`;
+        }
+
+        function loadSelectedTemplateIntoForm() {
+          const template = templates.find((item) => item.id === templateId);
+          if (!template) {
+            setOutput("Select a loaded template first. Use List Templates if the dropdown is empty.");
+            return;
+          }
+          setTemplateForm({
+            name: template.name || "",
+            timezone: template.timezone || "Europe/Warsaw",
+            isDefault: Boolean(template.isDefault),
+            defaultAvailabilityStatus: template.defaultAvailabilityStatus || "BUSY",
+          });
+          setOutput(pretty(template));
         }
 
         function availabilityBlockRangeQuery() {
@@ -628,12 +821,108 @@
               </section>
 
               <section>
+                <h2>Guest Login</h2>
+                <Field label="Guest email" value={guestAuth.email} onChange={(email) => setGuestAuth({ ...guestAuth, email })} />
+                <Field label="Guest name" value={guestAuth.name} onChange={(name) => setGuestAuth({ ...guestAuth, name })} />
+                <Field label="Login link" value={guestAuth.loginLink} onChange={(loginLink) => setGuestAuth({ ...guestAuth, loginLink, token: tokenFromLink(loginLink) })} />
+                <Field label="Token" value={guestAuth.token} onChange={(token) => setGuestAuth({ ...guestAuth, token })} />
+                <div className="actions">
+                  <button disabled={busy || !guestAuth.email} onClick={requestGuestLogin}>
+                    Request Guest Link
+                  </button>
+                  <button className="secondary" disabled={busy || (!guestAuth.token && !guestAuth.loginLink)} onClick={loginAsGuest}>
+                    Login as Guest
+                  </button>
+                </div>
+              </section>
+
+              <section>
+                <h2>Password Reset</h2>
+                <Field label="Account email" value={passwordReset.email} onChange={(email) => setPasswordReset({ ...passwordReset, email })} />
+                <Field label="Reset link" value={passwordReset.resetLink} onChange={(resetLink) => setPasswordReset({ ...passwordReset, resetLink, token: tokenFromLink(resetLink) })} />
+                <Field label="Token" value={passwordReset.token} onChange={(token) => setPasswordReset({ ...passwordReset, token })} />
+                <Field
+                  label="New password"
+                  type="password"
+                  value={passwordReset.newPassword}
+                  onChange={(newPassword) => setPasswordReset({ ...passwordReset, newPassword })}
+                />
+                <div className="actions">
+                  <button disabled={busy || !passwordReset.email} onClick={requestPasswordReset}>
+                    Request Reset Link
+                  </button>
+                  <button className="secondary" disabled={busy || !passwordReset.newPassword || (!passwordReset.token && !passwordReset.resetLink)} onClick={confirmPasswordReset}>
+                    Confirm Reset
+                  </button>
+                </div>
+              </section>
+
+              <section>
+                <h2>User Tools</h2>
+                <Field label="Email" value={userTools.email} onChange={(email) => setUserTools({ ...userTools, email })} />
+                <Field label="User ID" value={userTools.userId} onChange={(userId) => setUserTools({ ...userTools, userId })} />
+                <Field label="Name" value={userTools.name} onChange={(name) => setUserTools({ ...userTools, name })} />
+                <div className="actions">
+                  <button className="secondary" disabled={busy || !userTools.email} onClick={lookupUserByEmail}>
+                    Find by Email
+                  </button>
+                  <button className="secondary" disabled={busy || !userTools.email} onClick={createUserShell}>
+                    Create Shell
+                  </button>
+                  <button disabled={busy || !userTools.userId} onClick={() => api(`/users/${userTools.userId}/upgrade`, { method: "POST" }).then((user) => {
+                    setUserTools((current) => ({ ...current, userId: user?.id || current.userId }));
+                  })}>
+                    Upgrade
+                  </button>
+                  <button disabled={busy || !userTools.userId || !userTools.name} onClick={() => api(`/users/${userTools.userId}/name`, {
+                    method: "PATCH",
+                    body: JSON.stringify({ name: userTools.name }),
+                  })}>
+                    Update Name
+                  </button>
+                  <button className="danger" disabled={busy || !userTools.userId} onClick={() => api(`/users/${userTools.userId}`, { method: "DELETE" })}>
+                    Soft Delete
+                  </button>
+                </div>
+              </section>
+
+              <section>
+                <h2>My Password</h2>
+                <Field label="Initial password" type="password" value={userTools.initialPassword} onChange={(initialPassword) => setUserTools({ ...userTools, initialPassword })} />
+                <div className="row">
+                  <Field label="Current password" type="password" value={userTools.currentPassword} onChange={(currentPassword) => setUserTools({ ...userTools, currentPassword })} />
+                  <Field label="New password" type="password" value={userTools.newPassword} onChange={(newPassword) => setUserTools({ ...userTools, newPassword })} />
+                </div>
+                <div className="actions">
+                  <button disabled={busy || !accessToken || !userTools.initialPassword} onClick={() => api("/users/me/password", {
+                    method: "POST",
+                    body: JSON.stringify({ initialPassword: userTools.initialPassword }),
+                  })}>
+                    Set Initial Password
+                  </button>
+                  <button className="secondary" disabled={busy || !accessToken || !userTools.currentPassword || !userTools.newPassword} onClick={() => api("/users/me/password", {
+                    method: "PATCH",
+                    body: JSON.stringify({
+                      currentPassword: userTools.currentPassword,
+                      newPassword: userTools.newPassword,
+                    }),
+                  })}>
+                    Change Password
+                  </button>
+                </div>
+              </section>
+
+              <section>
                 <h2>OAuth Login</h2>
                 <div className="actions">
-                  <a className="button secondary" href="/api/auth/google/login">Google Login</a>
-                  <a className="button secondary" href="/api/auth/microsoft/login">Microsoft Login</a>
+                  <button className="secondary" disabled={busy} onClick={() => startOAuthLogin("google")}>
+                    Google Login Redirect
+                  </button>
+                  <button className="secondary" disabled={busy} onClick={() => startOAuthLogin("microsoft")}>
+                    Microsoft Login Redirect
+                  </button>
                 </div>
-                <p className="muted">OAuth login may return JSON directly from the backend. Paste the tokens below if needed.</p>
+                <p className="muted">These buttons send returnUrl back to this console and save returned tokens automatically.</p>
               </section>
 
               <section className="wide">
@@ -643,6 +932,12 @@
                 <div className="actions">
                   <button onClick={() => { saveTokens({ accessToken, refreshToken }); setOutput("Tokens saved."); }}>
                     Save Tokens
+                  </button>
+                  <button className="secondary" disabled={busy || !refreshToken} onClick={refreshAccessToken}>
+                    Refresh Access Token
+                  </button>
+                  <button className="secondary" disabled={busy || !accessToken} onClick={refreshBootstrap}>
+                    Load /me/bootstrap
                   </button>
                   <button className="secondary" onClick={() => { clearTokens(); setOutput("Tokens cleared."); }}>
                     Clear Tokens
@@ -663,27 +958,29 @@
                   <Field label="Import to" type="datetime-local" value={range.to} onChange={(to) => setRange({ ...range, to })} />
                 </div>
                 <div className="actions">
-                  <button
-                    onClick={() => {
-                      if (!accessToken) return setOutput("Login first, or paste and save an access token.");
-                      setCookie("meetler_access_token", accessToken);
-                      const returnUrl = encodeURIComponent(window.location.href);
-                      window.location.href = `/api/external-calendars/google/connect?returnUrl=${returnUrl}`;
-                    }}
-                  >
+                  <button disabled={busy} onClick={startGoogleCalendarConnect}>
                     Connect Google Calendar
                   </button>
                   <button
                     disabled={busy}
-                    onClick={() => api(`/external-calendars/google/import?from=${encodeURIComponent(toOffset(range.from))}&to=${encodeURIComponent(toOffset(range.to))}`, { method: "POST" })}
+                    onClick={() =>
+                      api(
+                        `/external-calendars/google/import?from=${encodeURIComponent(toOffset(range.from))}&to=${encodeURIComponent(toOffset(range.to))}`,
+                        { method: "POST" },
+                      ).then(refreshCalendars)
+                    }
                   >
-                    Import Google Events
+                    Import Google Calendars & Events
+                  </button>
+                  <button className="secondary" disabled={busy} onClick={refreshCalendars}>
+                    List Calendars
                   </button>
                 </div>
               </section>
 
               <section>
                 <h2>Create Calendar</h2>
+                <SelectField label="Active calendar" value={calendarId} onChange={setCalendarId} options={calendarOptions} />
                 <Field label="Name" value={calendarForm.name} onChange={(name) => setCalendarForm({ ...calendarForm, name })} />
                 <SelectField
                   label="Provider"
@@ -708,6 +1005,21 @@
                 <div className="actions">
                   <button disabled={busy} onClick={() => api("/calendars", { method: "POST", body: JSON.stringify(calendarForm) }).then(refreshCalendars)}>
                     Create Calendar
+                  </button>
+                  <button disabled={!calendarId || busy} onClick={() => api(`/calendars/${calendarId}`, {
+                    method: "PATCH",
+                    body: JSON.stringify({
+                      name: calendarForm.name,
+                      color: calendarForm.color,
+                      isActive: true,
+                      isEditable: calendarForm.provider === "INTERNAL",
+                      syncDirection: calendarForm.syncDirection,
+                    }),
+                  }).then(refreshCalendars)}>
+                    Update Calendar
+                  </button>
+                  <button className="danger" disabled={!calendarId || busy} onClick={() => api(`/calendars/${calendarId}`, { method: "DELETE" }).then(refreshCalendars)}>
+                    Delete Calendar
                   </button>
                   <button className="secondary" disabled={busy} onClick={refreshCalendars}>List Calendars</button>
                 </div>
@@ -747,6 +1059,20 @@
                   <button disabled={busy} onClick={() => api("/availability/templates", { method: "POST", body: JSON.stringify(templateForm) }).then(refreshTemplates)}>
                     Create Template
                   </button>
+                  <button disabled={!templateId || busy} onClick={() => api(`/availability/templates/${templateId}`, {
+                    method: "PATCH",
+                    body: JSON.stringify(templateForm),
+                  }).then(async (template) => {
+                    await refreshTemplates();
+                    setOutput(pretty(template));
+                  })}>
+                    Update Template
+                  </button>
+                  <button className="danger" disabled={!templateId || busy} onClick={() => api(`/availability/templates/${templateId}`, {
+                    method: "DELETE",
+                  }).then(refreshTemplates)}>
+                    Delete Template
+                  </button>
                   <button className="secondary" disabled={busy} onClick={refreshTemplates}>List Templates</button>
                 </div>
               </section>
@@ -760,6 +1086,7 @@
                 </div>
                 <div className="actions">
                   <button className="secondary" disabled={!templateId || busy} onClick={() => api(`/availability/templates/${templateId}`)}>Get</button>
+                  <button className="secondary" disabled={!templateId || busy} onClick={loadSelectedTemplateIntoForm}>Load Selected Into Form</button>
                   <button className="secondary" disabled={!templateId || busy} onClick={() => api(`/availability/templates/${templateId}/blocks?${availabilityBlockRangeQuery()}`)}>List Blocks</button>
                   <button className="secondary" disabled={!templateId || busy} onClick={() => api(`/availability/templates/${templateId}/recurring-blocks?${recurringBlockRangeQuery()}`)}>List Recurring</button>
                   <button className="secondary" disabled={!templateId || busy} onClick={() => api(`/availability/templates/${templateId}/blocks?page=0`)}>List All Blocks</button>
@@ -1012,6 +1339,22 @@
                   <button className="secondary" disabled={!groupForm.groupId || busy} onClick={() => refreshGroupEvents()}>
                     List Events
                   </button>
+                  <button className="secondary" disabled={!groupForm.groupId || !eventForm.eventId || busy} onClick={() => api(`/groups/${groupForm.groupId}/events/${eventForm.eventId}`, {
+                    method: "PATCH",
+                    body: JSON.stringify({
+                      title: eventForm.title,
+                      description: eventForm.description || null,
+                      startsAt: toOffset(eventForm.startsAt),
+                      endsAt: toOffset(eventForm.endsAt),
+                    }),
+                  }).then(() => refreshGroupEvents())}>
+                    Update Event
+                  </button>
+                  <button className="danger" disabled={!groupForm.groupId || !eventForm.eventId || busy} onClick={() => api(`/groups/${groupForm.groupId}/events/${eventForm.eventId}`, {
+                    method: "DELETE",
+                  }).then(() => refreshGroupEvents())}>
+                    Cancel Event
+                  </button>
                 </div>
               </section>
 
@@ -1033,6 +1376,11 @@
                     body: JSON.stringify({ status: eventForm.responseStatus }),
                   }).then(() => refreshGroupEvents())}>
                     Send Response
+                  </button>
+                  <button className="secondary" disabled={!groupForm.groupId || !eventForm.eventId || busy} onClick={() => api(`/groups/${groupForm.groupId}/events/${eventForm.eventId}/google/export`, {
+                    method: "POST",
+                  }).then(() => refreshGroupEvents())}>
+                    Export to Google
                   </button>
                 </div>
               </section>
