@@ -48,6 +48,10 @@ public class OpenApiConfig {
                     .description(
                         "Availability templates, one-off blocks, recurring rules, source calendars, and resolved availability windows"),
                 new Tag()
+                    .name("Notifications")
+                    .description(
+                        "In-app notifications and push device registration for mobile clients"),
+                new Tag()
                     .name("Subscriptions")
                     .description(
                         "Subscription usage and application-admin subscription management")))

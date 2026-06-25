@@ -61,11 +61,13 @@ public interface GroupApi {
       summary = "Get group availability grid",
       description =
           "Returns 15-minute availability slots for the selected group and date-time range. "
-              + "Each member is counted as available, busy, or missing a selected availability template.")
+              + "Each member is counted as available, busy, or missing a selected availability template. "
+              + "Pass memberIds to calculate the grid only for selected group members.")
   @GetMapping("/{groupId}/availability-grid")
   ResponseEntity<List<GroupAvailabilitySlotResponse>> getAvailabilityGrid(
       @PathVariable UUID groupId,
       @RequestParam OffsetDateTime from,
       @RequestParam OffsetDateTime to,
+      @RequestParam(required = false) List<UUID> memberIds,
       @AuthenticationPrincipal AppUser user);
 }

@@ -43,7 +43,8 @@ public class GroupController implements GroupApi {
 
   @Override
   public ResponseEntity<List<GroupAvailabilitySlotResponse>> getAvailabilityGrid(
-      UUID groupId, OffsetDateTime from, OffsetDateTime to, AppUser user) {
-    return ResponseEntity.ok(groupAvailabilityService.getAvailabilityGrid(groupId, user, from, to));
+      UUID groupId, OffsetDateTime from, OffsetDateTime to, List<UUID> memberIds, AppUser user) {
+    return ResponseEntity.ok(
+        groupAvailabilityService.getAvailabilityGrid(groupId, user, from, to, memberIds));
   }
 }

@@ -7,6 +7,7 @@ import com.skoryk.projects.meetler.group.event.sync.GoogleGroupEventExportServic
 import com.skoryk.projects.meetler.group.member.GroupMember;
 import com.skoryk.projects.meetler.group.member.GroupMemberRepository;
 import com.skoryk.projects.meetler.group.member.GroupPermissionService;
+import com.skoryk.projects.meetler.notification.NotificationService;
 import com.skoryk.projects.meetler.user.AppUser;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -25,6 +26,7 @@ public class GroupEventService {
   private final GroupEventRepository eventRepository;
   private final GroupEventParticipantRepository participantRepository;
   private final GoogleGroupEventExportService googleGroupEventExportService;
+  private final NotificationService notificationService;
 
   @Transactional
   public GroupEventResponse createEvent(
@@ -58,17 +60,21 @@ public class GroupEventService {
             : GroupEventParticipantStatus.ACCEPTED;
     OffsetDateTime respondedAt = requiresConfirmation ? null : OffsetDateTime.now();
 
-    groupMemberRepository.findByGroup(group).stream()
-        .map(GroupMember::getUser)
-        .map(
-            member ->
-                GroupEventParticipant.builder()
-                    .groupEvent(event)
-                    .user(member)
-                    .status(initialStatus)
-                    .respondedAt(respondedAt)
-                    .build())
-        .forEach(participantRepository::save);
+    List<GroupEventParticipant> participants =
+        groupMemberRepository.findByGroup(group).stream()
+            .map(GroupMember::getUser)
+            .map(
+                member ->
+                    GroupEventParticipant.builder()
+                        .groupEvent(event)
+                        .user(member)
+                        .status(initialStatus)
+                        .respondedAt(respondedAt)
+                        .build())
+            .map(participantRepository::save)
+            .toList();
+
+    notificationService.notifyGroupEventCreated(event, participants);
 
     return toResponse(event);
   }
@@ -131,6 +137,8 @@ public class GroupEventService {
 
     eventRepository.save(groupEvent);
     googleGroupEventExportService.synchronizeExistingGoogleExports(groupEvent);
+    notificationService.notifyGroupEventUpdated(
+        groupEvent, participantRepository.findByGroupEvent(groupEvent));
 
     return toResponse(groupEvent);
   }
@@ -165,9 +173,12 @@ public class GroupEventService {
     participant.setRespondedAt(OffsetDateTime.now());
     participantRepository.save(participant);
 
-    if (allParticipantsAccepted(event)) {
+    boolean wasPendingConfirmation = event.getStatus() == GroupEventStatus.PENDING_CONFIRMATION;
+    if (wasPendingConfirmation && allParticipantsAccepted(event)) {
       event.setStatus(GroupEventStatus.CONFIRMED);
       eventRepository.save(event);
+      notificationService.notifyGroupEventConfirmed(
+          event, participantRepository.findByGroupEvent(event));
     }
 
     return toResponse(event);
@@ -193,6 +204,8 @@ public class GroupEventService {
     groupEvent.setStatus(GroupEventStatus.CANCELLED);
     eventRepository.save(groupEvent);
     googleGroupEventExportService.deleteExistingGoogleExports(groupEvent);
+    notificationService.notifyGroupEventCancelled(
+        groupEvent, participantRepository.findByGroupEvent(groupEvent), user);
   }
 
   private boolean allParticipantsAccepted(GroupEvent event) {

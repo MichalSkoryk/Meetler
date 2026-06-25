@@ -20,6 +20,8 @@ class GroupAvailabilityApiIntegrationTest extends AbstractIntegrationTest {
     String ownerToken = registerAndReturnAccessToken("owner-" + UUID.randomUUID() + "@example.com");
     String memberToken =
         registerAndReturnAccessToken("member-" + UUID.randomUUID() + "@example.com");
+    String ownerUserId = getCurrentUserId(ownerToken);
+    String memberUserId = getCurrentUserId(memberToken);
 
     String ownerTemplateId = createTemplate(ownerToken, "Owner availability", "AVAILABLE", true);
     addAvailableBlock(
@@ -48,6 +50,25 @@ class GroupAvailabilityApiIntegrationTest extends AbstractIntegrationTest {
     assertThat(firstSlot.get("availableCount").asInt()).isEqualTo(1);
     assertThat(firstSlot.get("busyCount").asInt()).isEqualTo(1);
     assertThat(firstSlot.get("noTemplateCount").asInt()).isZero();
+
+    MvcResult filteredGridResult =
+        mockMvc
+            .perform(
+                get("/api/groups/{groupId}/availability-grid", groupId)
+                    .header(HttpHeaders.AUTHORIZATION, bearer(ownerToken))
+                    .queryParam("from", "2026-06-08T10:00:00+02:00")
+                    .queryParam("to", "2026-06-08T10:30:00+02:00")
+                    .queryParam("memberIds", memberUserId))
+            .andExpect(status().isOk())
+            .andReturn();
+
+    JsonNode filteredFirstSlot = body(filteredGridResult).get(0);
+    assertThat(filteredFirstSlot.get("totalMemberCount").asInt()).isEqualTo(1);
+    assertThat(filteredFirstSlot.get("availableCount").asInt()).isZero();
+    assertThat(filteredFirstSlot.get("busyCount").asInt()).isEqualTo(1);
+    assertThat(filteredFirstSlot.get("busyUserIds").get(0).asText()).isEqualTo(memberUserId);
+    assertThat(filteredFirstSlot.get("availableUserIds").size()).isZero();
+    assertThat(filteredFirstSlot.get("busyUserIds").toString()).doesNotContain(ownerUserId);
   }
 
   private String registerAndReturnAccessToken(String email) throws Exception {
@@ -81,6 +102,15 @@ class GroupAvailabilityApiIntegrationTest extends AbstractIntegrationTest {
             .andExpect(status().isOk())
             .andReturn();
     return body(result).get("id").asText();
+  }
+
+  private String getCurrentUserId(String token) throws Exception {
+    MvcResult result =
+        mockMvc
+            .perform(get("/api/me/bootstrap").header(HttpHeaders.AUTHORIZATION, bearer(token)))
+            .andExpect(status().isOk())
+            .andReturn();
+    return body(result).get("user").get("id").asText();
   }
 
   private void addAvailableBlock(String token, String templateId, String startsAt, String endsAt)

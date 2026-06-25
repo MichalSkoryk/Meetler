@@ -20,6 +20,7 @@ import com.skoryk.projects.meetler.group.member.GroupMember;
 import com.skoryk.projects.meetler.group.member.GroupMemberRepository;
 import com.skoryk.projects.meetler.group.member.GroupPermissionService;
 import com.skoryk.projects.meetler.group.member.GroupRole;
+import com.skoryk.projects.meetler.notification.NotificationService;
 import com.skoryk.projects.meetler.user.AppUser;
 import com.skoryk.projects.meetler.user.AppUserRole;
 import java.time.OffsetDateTime;
@@ -42,6 +43,7 @@ class GroupEventServiceTest {
   @Mock private GroupEventRepository eventRepository;
   @Mock private GroupEventParticipantRepository participantRepository;
   @Mock private GoogleGroupEventExportService googleGroupEventExportService;
+  @Mock private NotificationService notificationService;
 
   @InjectMocks private GroupEventService service;
 
@@ -70,6 +72,7 @@ class GroupEventServiceTest {
     verify(participantRepository, times(2)).save(participantCaptor.capture());
     assertThat(participantCaptor.getAllValues())
         .allMatch(participant -> participant.getStatus() == GroupEventParticipantStatus.PENDING);
+    verify(notificationService).notifyGroupEventCreated(any(GroupEvent.class), any());
   }
 
   @Test
@@ -95,6 +98,7 @@ class GroupEventServiceTest {
     assertThat(participantCaptor.getValue().getStatus())
         .isEqualTo(GroupEventParticipantStatus.ACCEPTED);
     assertThat(participantCaptor.getValue().getRespondedAt()).isNotNull();
+    verify(notificationService).notifyGroupEventCreated(any(GroupEvent.class), any());
   }
 
   @Test
@@ -132,6 +136,45 @@ class GroupEventServiceTest {
 
     assertThat(response.getStatus()).isEqualTo("CONFIRMED");
     verify(eventRepository).save(event);
+    verify(notificationService).notifyGroupEventConfirmed(event, List.of(participant));
+  }
+
+  @Test
+  void respondDoesNotNotifyConfirmationAgainWhenEventIsAlreadyConfirmed() {
+    AppUser user = user("member@example.com");
+    Group group = group(true);
+    GroupEvent event =
+        GroupEvent.builder()
+            .id(UUID.randomUUID())
+            .group(group)
+            .createdBy(user)
+            .title("Dinner")
+            .startsAt(OffsetDateTime.parse("2026-06-10T18:00:00+02:00"))
+            .endsAt(OffsetDateTime.parse("2026-06-10T19:00:00+02:00"))
+            .requiresConfirmation(true)
+            .status(GroupEventStatus.CONFIRMED)
+            .build();
+    GroupEventParticipant participant =
+        GroupEventParticipant.builder()
+            .groupEvent(event)
+            .user(user)
+            .status(GroupEventParticipantStatus.ACCEPTED)
+            .build();
+    RespondToGroupEventRequest request = new RespondToGroupEventRequest();
+    request.setStatus(GroupEventParticipantStatus.ACCEPTED);
+
+    when(groupRepository.findById(group.getId())).thenReturn(Optional.of(group));
+    when(groupPermissionService.isMember(group, user)).thenReturn(true);
+    when(eventRepository.findByIdAndGroup(event.getId(), group)).thenReturn(Optional.of(event));
+    when(participantRepository.findByGroupEventAndUser(event, user))
+        .thenReturn(Optional.of(participant));
+    when(participantRepository.findByGroupEvent(event)).thenReturn(List.of(participant));
+
+    GroupEventResponse response = service.respond(group.getId(), event.getId(), request, user);
+
+    assertThat(response.getStatus()).isEqualTo("CONFIRMED");
+    verify(eventRepository, never()).save(event);
+    verify(notificationService, never()).notifyGroupEventConfirmed(any(), any());
   }
 
   @Test
@@ -156,6 +199,7 @@ class GroupEventServiceTest {
         .setParticipantStateInEvent(
             any(GroupEvent.class), any(GroupEventParticipantStatus.class), any());
     verify(eventRepository).save(event);
+    verify(notificationService).notifyGroupEventUpdated(event, List.of());
   }
 
   @Test
@@ -180,6 +224,7 @@ class GroupEventServiceTest {
     verify(participantRepository)
         .setParticipantStateInEvent(event, GroupEventParticipantStatus.PENDING, null);
     verify(eventRepository).save(event);
+    verify(notificationService).notifyGroupEventUpdated(event, List.of());
   }
 
   @Test
@@ -205,6 +250,7 @@ class GroupEventServiceTest {
             eq(event), eq(GroupEventParticipantStatus.ACCEPTED), any(OffsetDateTime.class));
     verify(eventRepository).save(event);
     verify(googleGroupEventExportService).synchronizeExistingGoogleExports(event);
+    verify(notificationService).notifyGroupEventUpdated(event, List.of());
   }
 
   @Test
@@ -225,6 +271,7 @@ class GroupEventServiceTest {
 
     assertThat(response.getTitle()).isEqualTo("Admin update");
     verify(eventRepository).save(event);
+    verify(notificationService).notifyGroupEventUpdated(event, List.of());
   }
 
   @Test
@@ -290,6 +337,7 @@ class GroupEventServiceTest {
     assertThat(event.getStatus()).isEqualTo(GroupEventStatus.CANCELLED);
     verify(eventRepository).save(event);
     verify(googleGroupEventExportService).deleteExistingGoogleExports(event);
+    verify(notificationService).notifyGroupEventCancelled(event, List.of(), creator);
     verify(participantRepository, never())
         .setParticipantStateInEvent(
             any(GroupEvent.class), any(GroupEventParticipantStatus.class), any());
@@ -310,6 +358,7 @@ class GroupEventServiceTest {
 
     assertThat(event.getStatus()).isEqualTo(GroupEventStatus.CANCELLED);
     verify(eventRepository).save(event);
+    verify(notificationService).notifyGroupEventCancelled(event, List.of(), admin);
   }
 
   @Test

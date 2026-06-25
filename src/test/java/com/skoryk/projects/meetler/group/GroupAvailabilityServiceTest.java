@@ -88,6 +88,53 @@ class GroupAvailabilityServiceTest {
   }
 
   @Test
+  void gridCanBeCalculatedForSelectedGroupMembersOnly() {
+    Group group = group();
+    AppUser requester = user();
+    AppUser selectedUser = user();
+    AppUser ignoredUser = user();
+    AvailabilityTemplate selectedTemplate = template(selectedUser);
+    AvailabilityTemplate ignoredTemplate = template(ignoredUser);
+    GroupMember selectedMember = member(group, selectedUser, selectedTemplate);
+    GroupMember ignoredMember = member(group, ignoredUser, ignoredTemplate);
+
+    when(groupRepository.findById(group.getId())).thenReturn(Optional.of(group));
+    when(permissionService.isMember(group, requester)).thenReturn(true);
+    when(memberRepository.findByGroup(group)).thenReturn(List.of(selectedMember, ignoredMember));
+    when(availabilityTemplateResolver.resolve(selectedTemplate, from, to))
+        .thenReturn(List.of(window(from, to, AvailabilityBlockStatus.AVAILABLE)));
+
+    List<GroupAvailabilitySlotResponse> slots =
+        service.getAvailabilityGrid(
+            group.getId(), requester, from, to, List.of(selectedUser.getId()));
+
+    assertThat(slots).hasSize(2);
+    assertThat(slots.getFirst().getTotalMemberCount()).isEqualTo(1);
+    assertThat(slots.getFirst().getAvailableUserIds()).containsExactly(selectedUser.getId());
+    assertThat(slots.getFirst().getBusyUserIds()).isEmpty();
+  }
+
+  @Test
+  void gridRejectsSelectedUsersWhoAreNotGroupMembers() {
+    Group group = group();
+    AppUser requester = user();
+    AppUser memberUser = user();
+    UUID outsiderUserId = UUID.randomUUID();
+
+    when(groupRepository.findById(group.getId())).thenReturn(Optional.of(group));
+    when(permissionService.isMember(group, requester)).thenReturn(true);
+    when(memberRepository.findByGroup(group))
+        .thenReturn(List.of(member(group, memberUser, template(memberUser))));
+
+    assertThatThrownBy(
+            () ->
+                service.getAvailabilityGrid(
+                    group.getId(), requester, from, to, List.of(outsiderUserId)))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("Selected users must be group members");
+  }
+
+  @Test
   void gridRejectsRangeLongerThanThirtyOneDays() {
     assertThatThrownBy(
             () -> service.getAvailabilityGrid(UUID.randomUUID(), user(), from, from.plusDays(32)))

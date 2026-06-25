@@ -12,7 +12,9 @@ import com.skoryk.projects.meetler.user.AppUser;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -33,6 +35,16 @@ public class GroupAvailabilityService {
   @Transactional(readOnly = true)
   public List<GroupAvailabilitySlotResponse> getAvailabilityGrid(
       UUID groupId, AppUser requester, OffsetDateTime from, OffsetDateTime to) {
+    return getAvailabilityGrid(groupId, requester, from, to, null);
+  }
+
+  @Transactional(readOnly = true)
+  public List<GroupAvailabilitySlotResponse> getAvailabilityGrid(
+      UUID groupId,
+      AppUser requester,
+      OffsetDateTime from,
+      OffsetDateTime to,
+      List<UUID> selectedUserIds) {
     validateRange(from, to);
 
     Group group =
@@ -45,6 +57,7 @@ public class GroupAvailabilityService {
     }
 
     List<GroupMember> members = memberRepository.findByGroup(group);
+    members = filterSelectedMembers(members, selectedUserIds);
     List<MemberResolvedAvailability> memberAvailability =
         members.stream().map(member -> resolveMemberAvailability(member, from, to)).toList();
 
@@ -57,6 +70,25 @@ public class GroupAvailabilityService {
     }
 
     return slots;
+  }
+
+  private List<GroupMember> filterSelectedMembers(
+      List<GroupMember> members, List<UUID> selectedUserIds) {
+    if (selectedUserIds == null || selectedUserIds.isEmpty()) {
+      return members;
+    }
+
+    Set<UUID> selectedUserIdSet = new LinkedHashSet<>(selectedUserIds);
+    List<GroupMember> selectedMembers =
+        members.stream()
+            .filter(member -> selectedUserIdSet.contains(member.getUser().getId()))
+            .toList();
+
+    if (selectedMembers.size() != selectedUserIdSet.size()) {
+      throw new IllegalArgumentException("Selected users must be group members");
+    }
+
+    return selectedMembers;
   }
 
   private MemberResolvedAvailability resolveMemberAvailability(
