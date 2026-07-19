@@ -1,5 +1,6 @@
 package com.skoryk.projects.meetler.availability.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.skoryk.projects.meetler.availability.model.AvailabilityBlockStatus;
 import java.time.OffsetDateTime;
 import java.util.UUID;
@@ -12,6 +13,7 @@ public class AvailabilityTemplateResponse {
 
   private UUID id;
   private String name;
+  @JsonProperty("isDefault")
   private boolean isDefault;
   private String timezone;
   private AvailabilityBlockStatus defaultAvailabilityStatus;

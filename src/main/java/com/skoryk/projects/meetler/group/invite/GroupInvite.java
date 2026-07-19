@@ -1,6 +1,7 @@
 package com.skoryk.projects.meetler.group.invite;
 
 import com.skoryk.projects.meetler.group.Group;
+import com.skoryk.projects.meetler.user.AppUser;
 import jakarta.persistence.*;
 import java.time.OffsetDateTime;
 import java.util.UUID;
@@ -33,4 +34,10 @@ public class GroupInvite {
 
   @Column(nullable = false)
   private OffsetDateTime createdAt;
+
+  private OffsetDateTime revokedAt;
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "revoked_by_user_id")
+  private AppUser revokedBy;
 }

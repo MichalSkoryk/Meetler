@@ -108,6 +108,13 @@ public class AvailabilityTemplateController implements AvailabilityTemplateApi {
   }
 
   @Override
+  public ResponseEntity<RecurringAvailabilityBlockResponse> updateRecurringBlock(
+      UUID templateId, UUID blockId, AddRecurringAvailabilityBlockRequest request, AppUser user) {
+    return ResponseEntity.ok(
+        availabilityTemplateService.updateRecurringBlock(templateId, blockId, user, request));
+  }
+
+  @Override
   public ResponseEntity<Page<RecurringAvailabilityBlockResponse>> getRecurringBlocks(
       UUID templateId, LocalDate from, LocalDate to, int page, AppUser user) {
     return ResponseEntity.ok(

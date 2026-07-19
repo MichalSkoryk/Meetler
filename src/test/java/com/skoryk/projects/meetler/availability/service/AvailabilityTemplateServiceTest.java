@@ -18,6 +18,7 @@ import com.skoryk.projects.meetler.availability.model.AvailabilityBlockStatus;
 import com.skoryk.projects.meetler.availability.model.AvailabilityRecurrenceFrequency;
 import com.skoryk.projects.meetler.availability.model.AvailabilityTemplate;
 import com.skoryk.projects.meetler.availability.model.AvailabilityTemplateBlock;
+import com.skoryk.projects.meetler.availability.model.AvailabilityTemplateRecurringBlock;
 import com.skoryk.projects.meetler.availability.repository.AvailabilityTemplateBlockRepository;
 import com.skoryk.projects.meetler.availability.repository.AvailabilityTemplateRecurringBlockRepository;
 import com.skoryk.projects.meetler.availability.repository.AvailabilityTemplateRepository;
@@ -194,6 +195,47 @@ class AvailabilityTemplateServiceTest {
     assertThatThrownBy(() -> service.addRecurringBlock(template.getId(), user, request))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("Weekly recurrence requires dayOfWeek");
+  }
+
+  @Test
+  void updateRecurringBlockChangesTheExistingRule() {
+    AppUser user = user();
+    AvailabilityTemplate template = template(user);
+    UUID blockId = UUID.randomUUID();
+    AvailabilityTemplateRecurringBlock block =
+        AvailabilityTemplateRecurringBlock.builder()
+            .id(blockId)
+            .template(template)
+            .frequency(AvailabilityRecurrenceFrequency.WEEKLY)
+            .intervalCount(1)
+            .dayOfWeek(DayOfWeek.MONDAY)
+            .startTime(LocalTime.of(9, 0))
+            .endTime(LocalTime.of(17, 0))
+            .status(AvailabilityBlockStatus.AVAILABLE)
+            .build();
+    AddRecurringAvailabilityBlockRequest request = recurringRequest();
+    request.setDayOfWeek(DayOfWeek.WEDNESDAY);
+    request.setIntervalCount(2);
+    request.setStartTime(LocalTime.of(18, 0));
+    request.setEndTime(LocalTime.of(20, 0));
+    request.setStatus(AvailabilityBlockStatus.BUSY);
+    request.setNote("Training");
+
+    when(templateRepository.findByIdAndUser(template.getId(), user))
+        .thenReturn(Optional.of(template));
+    when(recurringBlockRepository.findByIdAndTemplate(blockId, template))
+        .thenReturn(Optional.of(block));
+    when(recurringBlockRepository.save(block)).thenReturn(block);
+
+    service.updateRecurringBlock(template.getId(), blockId, user, request);
+
+    assertThat(block.getDayOfWeek()).isEqualTo(DayOfWeek.WEDNESDAY);
+    assertThat(block.getIntervalCount()).isEqualTo(2);
+    assertThat(block.getStartTime()).isEqualTo(LocalTime.of(18, 0));
+    assertThat(block.getEndTime()).isEqualTo(LocalTime.of(20, 0));
+    assertThat(block.getStatus()).isEqualTo(AvailabilityBlockStatus.BUSY);
+    assertThat(block.getNote()).isEqualTo("Training");
+    verify(recurringBlockRepository).save(block);
   }
 
   private CreateAvailabilityTemplateRequest createTemplateRequest() {

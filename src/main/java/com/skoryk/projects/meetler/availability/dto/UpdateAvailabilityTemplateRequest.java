@@ -1,5 +1,6 @@
 package com.skoryk.projects.meetler.availability.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.skoryk.projects.meetler.availability.model.AvailabilityBlockStatus;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -11,6 +12,7 @@ public class UpdateAvailabilityTemplateRequest {
   @Size(max = 255)
   private String name;
 
+  @JsonProperty("isDefault")
   private boolean isDefault;
 
   @NotBlank

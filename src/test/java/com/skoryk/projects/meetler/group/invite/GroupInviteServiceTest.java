@@ -9,12 +9,14 @@ import static org.mockito.Mockito.when;
 
 import com.skoryk.projects.meetler.group.Group;
 import com.skoryk.projects.meetler.group.GroupRepository;
+import com.skoryk.projects.meetler.group.invite.dto.GroupInviteResponse;
 import com.skoryk.projects.meetler.group.member.GroupMemberService;
 import com.skoryk.projects.meetler.group.member.GroupPermissionService;
 import com.skoryk.projects.meetler.group.member.GroupRole;
 import com.skoryk.projects.meetler.user.AppUser;
 import com.skoryk.projects.meetler.user.AppUserRole;
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -45,6 +47,97 @@ class GroupInviteServiceTest {
         .hasMessage("User not allowed to create invites");
 
     verify(inviteRepository, never()).save(any());
+  }
+
+  @Test
+  void listActiveInvitesRequiresAdminPermission() {
+    Group group = group();
+    AppUser user = user();
+    when(groupRepository.findById(group.getId())).thenReturn(Optional.of(group));
+    when(groupPermissionService.isAdmin(group, user)).thenReturn(false);
+
+    assertThatThrownBy(() -> service.listActiveInvites(group.getId(), user))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("User not allowed to view invites");
+  }
+
+  @Test
+  void listActiveInvitesReturnsOnlyNotExpiredInvitesWithUsesLeft() {
+    Group group = group();
+    AppUser user = user();
+    GroupInvite activeUnlimited = invite(group);
+    activeUnlimited.setCode("active1");
+    GroupInvite activeLimited = invite(group);
+    activeLimited.setCode("active2");
+    activeLimited.setMaxUses(3);
+    activeLimited.setUses(2);
+    GroupInvite expired = invite(group);
+    expired.setCode("expired");
+    expired.setExpiresAt(OffsetDateTime.now().minusMinutes(1));
+    GroupInvite maxedOut = invite(group);
+    maxedOut.setCode("maxed");
+    maxedOut.setMaxUses(2);
+    maxedOut.setUses(2);
+    GroupInvite revoked = invite(group);
+    revoked.setCode("revoked");
+    revoked.setRevokedAt(OffsetDateTime.now().minusMinutes(1));
+    revoked.setRevokedBy(user());
+
+    when(groupRepository.findById(group.getId())).thenReturn(Optional.of(group));
+    when(groupPermissionService.isAdmin(group, user)).thenReturn(true);
+    when(inviteRepository.findByGroupOrderByCreatedAtDesc(group))
+        .thenReturn(List.of(activeUnlimited, activeLimited, expired, maxedOut, revoked));
+
+    List<GroupInviteResponse> invites = service.listActiveInvites(group.getId(), user);
+
+    assertThat(invites)
+        .extracting(GroupInviteResponse::getCode)
+        .containsExactly("active1", "active2");
+  }
+
+  @Test
+  void revokeInviteRequiresAdminPermission() {
+    Group group = group();
+    GroupInvite invite = invite(group);
+    AppUser user = user();
+    when(inviteRepository.findById(invite.getId())).thenReturn(Optional.of(invite));
+    when(groupPermissionService.isAdmin(group, user)).thenReturn(false);
+
+    assertThatThrownBy(() -> service.revokeInvite(invite.getId(), user))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("User not allowed to revoke invites");
+
+    assertThat(invite.getRevokedAt()).isNull();
+    verify(inviteRepository, never()).save(any());
+  }
+
+  @Test
+  void revokeInviteStoresRevocationMetadata() {
+    Group group = group();
+    GroupInvite invite = invite(group);
+    AppUser user = user();
+    when(inviteRepository.findById(invite.getId())).thenReturn(Optional.of(invite));
+    when(groupPermissionService.isAdmin(group, user)).thenReturn(true);
+
+    GroupInviteResponse response = service.revokeInvite(invite.getId(), user);
+
+    assertThat(invite.getRevokedAt()).isNotNull();
+    assertThat(invite.getRevokedBy()).isEqualTo(user);
+    assertThat(response.getRevokedAt()).isNotNull();
+    assertThat(response.getRevokedByUserId()).isEqualTo(user.getId());
+    verify(inviteRepository).save(invite);
+  }
+
+  @Test
+  void joinWithCodeRejectsRevokedInvite() {
+    GroupInvite invite = invite(group());
+    invite.setRevokedAt(OffsetDateTime.now().minusMinutes(1));
+    invite.setRevokedBy(user());
+    when(inviteRepository.findByCode("abc")).thenReturn(Optional.of(invite));
+
+    assertThatThrownBy(() -> service.joinWithCode("abc", user()))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("Invite revoked");
   }
 
   @Test

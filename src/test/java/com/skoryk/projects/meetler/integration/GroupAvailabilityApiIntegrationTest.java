@@ -3,6 +3,7 @@ package com.skoryk.projects.meetler.integration;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -100,6 +101,7 @@ class GroupAvailabilityApiIntegrationTest extends AbstractIntegrationTest {
                                 "isDefault", isDefault,
                                 "defaultAvailabilityStatus", defaultAvailabilityStatus))))
             .andExpect(status().isOk())
+            .andExpect(jsonPath("$.isDefault").value(isDefault))
             .andReturn();
     return body(result).get("id").asText();
   }

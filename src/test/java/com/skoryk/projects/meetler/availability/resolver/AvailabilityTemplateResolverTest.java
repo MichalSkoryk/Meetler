@@ -176,6 +176,15 @@ class AvailabilityTemplateResolverTest {
 
     List<ResolvedAvailabilityWindowResponse> windows = resolver.resolve(template, from, to);
 
+    ResolvedAvailabilityWindowResponse importedWindow =
+        windows.stream()
+            .filter(window -> window.getSource() == ResolvedAvailabilitySource.EXTERNAL_CALENDAR)
+            .findFirst()
+            .orElseThrow();
+    assertThat(importedWindow.getSourceCalendarId()).isEqualTo(calendar.getId());
+    assertThat(importedWindow.getSourceCalendarName()).isEqualTo(calendar.getName());
+    assertThat(importedWindow.getSourceCalendarProvider()).isEqualTo(calendar.getProvider());
+
     assertThat(windows)
         .extracting(
             ResolvedAvailabilityWindowResponse::getStartsAt,

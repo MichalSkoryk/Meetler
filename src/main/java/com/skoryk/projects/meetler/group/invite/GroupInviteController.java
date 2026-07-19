@@ -1,9 +1,10 @@
 package com.skoryk.projects.meetler.group.invite;
 
+import com.skoryk.projects.meetler.group.invite.dto.GroupInviteResponse;
 import com.skoryk.projects.meetler.user.AppUser;
 import jakarta.validation.constraints.Min;
 import java.time.OffsetDateTime;
-import java.util.Map;
+import java.util.List;
 import java.util.UUID;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -17,10 +18,20 @@ public class GroupInviteController implements GroupInviteApi {
   private final GroupInviteService inviteService;
 
   @Override
-  public ResponseEntity<Map<String, String>> createInvite(
+  public ResponseEntity<List<GroupInviteResponse>> listActiveInvites(UUID groupId, AppUser user) {
+    return ResponseEntity.ok(inviteService.listActiveInvites(groupId, user));
+  }
+
+  @Override
+  public ResponseEntity<GroupInviteResponse> createInvite(
       UUID groupId, InviteRequest request, AppUser user) {
     String code = inviteService.createInvite(groupId, user, request.maxUses, request.expiresAt);
-    return ResponseEntity.ok(Map.of("code", code));
+    return ResponseEntity.ok(GroupInviteResponse.builder().code(code).build());
+  }
+
+  @Override
+  public ResponseEntity<GroupInviteResponse> revokeInvite(UUID inviteId, AppUser user) {
+    return ResponseEntity.ok(inviteService.revokeInvite(inviteId, user));
   }
 
   @Override

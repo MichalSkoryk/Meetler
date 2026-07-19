@@ -120,6 +120,9 @@ public class AvailabilityTemplateResolver {
         .status(AvailabilityBlockStatus.BUSY)
         .source(ResolvedAvailabilitySource.EXTERNAL_CALENDAR)
         .sourceBlockId(event.getId())
+        .sourceCalendarId(event.getCalendar().getId())
+        .sourceCalendarName(event.getCalendar().getName())
+        .sourceCalendarProvider(event.getCalendar().getProvider())
         .note(event.getTitle())
         .build();
   }

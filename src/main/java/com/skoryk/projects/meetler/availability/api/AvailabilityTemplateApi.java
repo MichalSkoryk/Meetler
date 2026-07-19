@@ -276,6 +276,18 @@ public interface AvailabilityTemplateApi {
       @AuthenticationPrincipal AppUser user);
 
   @Operation(
+      summary = "Update a recurring availability block",
+      description =
+          "Updates the complete recurring rule in place. The request uses the same fields and "
+              + "validation rules as recurring block creation.")
+  @PatchMapping("/{templateId}/recurring-blocks/{blockId}")
+  ResponseEntity<RecurringAvailabilityBlockResponse> updateRecurringBlock(
+      @PathVariable UUID templateId,
+      @PathVariable UUID blockId,
+      @Valid @RequestBody AddRecurringAvailabilityBlockRequest request,
+      @AuthenticationPrincipal AppUser user);
+
+  @Operation(
       summary = "List recurring availability blocks",
       description =
           "Returns daily, weekly, monthly, and yearly recurring availability rules for the template, paged in batches of 50. "

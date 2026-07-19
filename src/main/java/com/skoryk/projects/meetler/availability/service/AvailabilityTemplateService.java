@@ -188,21 +188,25 @@ public class AvailabilityTemplateService {
     validateRecurringRule(request);
 
     AvailabilityTemplateRecurringBlock block =
-        AvailabilityTemplateRecurringBlock.builder()
-            .template(template)
-            .frequency(request.getFrequency())
-            .intervalCount(request.getIntervalCount() == null ? 1 : request.getIntervalCount())
-            .occurrenceCount(request.getOccurrenceCount())
-            .dayOfWeek(request.getDayOfWeek())
-            .dayOfMonth(request.getDayOfMonth())
-            .monthOfYear(request.getMonthOfYear())
-            .startTime(request.getStartTime())
-            .endTime(request.getEndTime())
-            .status(request.getStatus())
-            .note(request.getNote())
-            .startsOn(request.getStartsOn())
-            .endsOn(request.getEndsOn())
-            .build();
+        AvailabilityTemplateRecurringBlock.builder().template(template).build();
+    applyRecurringRequest(block, request);
+
+    return toRecurringBlockResponse(recurringBlockRepository.save(block));
+  }
+
+  @Transactional
+  public RecurringAvailabilityBlockResponse updateRecurringBlock(
+      UUID templateId, UUID blockId, AppUser user, AddRecurringAvailabilityBlockRequest request) {
+    AvailabilityTemplate template = getOwnedTemplate(templateId, user);
+    validateLocalTimeRange(request.getStartTime(), request.getEndTime());
+    validateRecurringRule(request);
+
+    AvailabilityTemplateRecurringBlock block =
+        recurringBlockRepository
+            .findByIdAndTemplate(blockId, template)
+            .orElseThrow(
+                () -> new IllegalArgumentException("Recurring availability block not found"));
+    applyRecurringRequest(block, request);
 
     return toRecurringBlockResponse(recurringBlockRepository.save(block));
   }
@@ -225,24 +229,8 @@ public class AvailabilityTemplateService {
     validateRecurringRule(recurringRequest);
 
     AvailabilityTemplateRecurringBlock recurringBlock =
-        AvailabilityTemplateRecurringBlock.builder()
-            .template(template)
-            .frequency(recurringRequest.getFrequency())
-            .intervalCount(
-                recurringRequest.getIntervalCount() == null
-                    ? 1
-                    : recurringRequest.getIntervalCount())
-            .occurrenceCount(recurringRequest.getOccurrenceCount())
-            .dayOfWeek(recurringRequest.getDayOfWeek())
-            .dayOfMonth(recurringRequest.getDayOfMonth())
-            .monthOfYear(recurringRequest.getMonthOfYear())
-            .startTime(recurringRequest.getStartTime())
-            .endTime(recurringRequest.getEndTime())
-            .status(recurringRequest.getStatus())
-            .note(recurringRequest.getNote())
-            .startsOn(recurringRequest.getStartsOn())
-            .endsOn(recurringRequest.getEndsOn())
-            .build();
+        AvailabilityTemplateRecurringBlock.builder().template(template).build();
+    applyRecurringRequest(recurringBlock, recurringRequest);
 
     AvailabilityTemplateRecurringBlock savedBlock = recurringBlockRepository.save(recurringBlock);
 
@@ -462,6 +450,22 @@ public class AvailabilityTemplateService {
       case YEARLY -> request.setDayOfWeek(null);
       default -> throw new IllegalArgumentException("Unsupported recurrence frequency");
     }
+  }
+
+  private void applyRecurringRequest(
+      AvailabilityTemplateRecurringBlock block, AddRecurringAvailabilityBlockRequest request) {
+    block.setFrequency(request.getFrequency());
+    block.setIntervalCount(request.getIntervalCount() == null ? 1 : request.getIntervalCount());
+    block.setOccurrenceCount(request.getOccurrenceCount());
+    block.setDayOfWeek(request.getDayOfWeek());
+    block.setDayOfMonth(request.getDayOfMonth());
+    block.setMonthOfYear(request.getMonthOfYear());
+    block.setStartTime(request.getStartTime());
+    block.setEndTime(request.getEndTime());
+    block.setStatus(request.getStatus());
+    block.setNote(request.getNote());
+    block.setStartsOn(request.getStartsOn());
+    block.setEndsOn(request.getEndsOn());
   }
 
   private void validateRecurringRule(AddRecurringAvailabilityBlockRequest request) {
