@@ -81,3 +81,18 @@ external-calendar:
       client-id: ${GOOGLE_OAUTH_CLIENT_ID:${GOOGLE_CLIENT_ID:}}
       client-secret: ${GOOGLE_OAUTH_CLIENT_SECRET:${GOOGLE_CLIENT_SECRET:}}
       redirect-uri: ${GOOGLE_OAUTH_REDIRECT_URI:http://localhost:8080/api/external-calendars/google/callback}
+    sync:
+      enabled: ${GOOGLE_CALENDAR_AUTO_SYNC_ENABLED:true}
+      fixed-delay-ms: ${GOOGLE_CALENDAR_AUTO_SYNC_INTERVAL_MS:300000}
+      initial-delay-ms: ${GOOGLE_CALENDAR_AUTO_SYNC_INITIAL_DELAY_MS:30000}
+
+billing:
+  revenuecat:
+    mode: ${BILLING_MODE:DISABLED}
+    api-url: ${REVENUECAT_API_URL:https://api.revenuecat.com/v1}
+    secret-api-key: ${REVENUECAT_SECRET_API_KEY:}
+    webhook-authorization: ${REVENUECAT_WEBHOOK_AUTHORIZATION:}
+    webhook-signing-secret: ${REVENUECAT_WEBHOOK_SIGNING_SECRET:}
+    webhook-tolerance-seconds: ${REVENUECAT_WEBHOOK_TOLERANCE_SECONDS:300}
+    plus-entitlement-id: ${REVENUECAT_PLUS_ENTITLEMENT_ID:plus}
+    pro-entitlement-id: ${REVENUECAT_PRO_ENTITLEMENT_ID:pro}

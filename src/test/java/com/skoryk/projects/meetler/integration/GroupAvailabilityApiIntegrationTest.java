@@ -34,8 +34,8 @@ class GroupAvailabilityApiIntegrationTest extends AbstractIntegrationTest {
     String inviteCode = createInvite(ownerToken, groupId);
     joinGroup(memberToken, inviteCode);
 
-    selectTemplate(ownerToken, groupId, ownerTemplateId);
-    selectTemplate(memberToken, groupId, memberTemplateId);
+    assertSelectedTemplate(ownerToken, groupId, ownerTemplateId);
+    assertSelectedTemplate(memberToken, groupId, memberTemplateId);
 
     MvcResult gridResult =
         mockMvc
@@ -158,6 +158,10 @@ class GroupAvailabilityApiIntegrationTest extends AbstractIntegrationTest {
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(json(Map.of("maxUses", 10))))
             .andExpect(status().isOk())
+            .andExpect(jsonPath("$.id").isNotEmpty())
+            .andExpect(jsonPath("$.uses").value(0))
+            .andExpect(jsonPath("$.maxUses").value(10))
+            .andExpect(jsonPath("$.createdAt").isNotEmpty())
             .andReturn();
     return body(result).get("code").asText();
   }
@@ -170,13 +174,13 @@ class GroupAvailabilityApiIntegrationTest extends AbstractIntegrationTest {
         .andExpect(status().isOk());
   }
 
-  private void selectTemplate(String token, String groupId, String templateId) throws Exception {
+  private void assertSelectedTemplate(String token, String groupId, String templateId)
+      throws Exception {
     mockMvc
         .perform(
-            post("/api/groups/{groupId}/members/me/availability-template", groupId)
-                .header(HttpHeaders.AUTHORIZATION, bearer(token))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(json(Map.of("availabilityTemplateId", templateId))))
-        .andExpect(status().isOk());
+            get("/api/groups/{groupId}/members/me/availability-template", groupId)
+                .header(HttpHeaders.AUTHORIZATION, bearer(token)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.availabilityTemplateId").value(templateId));
   }
 }

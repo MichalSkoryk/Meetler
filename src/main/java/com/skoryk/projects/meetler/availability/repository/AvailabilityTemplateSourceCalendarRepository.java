@@ -18,4 +18,6 @@ public interface AvailabilityTemplateSourceCalendarRepository
 
   Optional<AvailabilityTemplateSourceCalendar> findByTemplateAndCalendar(
       AvailabilityTemplate template, Calendar calendar);
+
+  boolean existsByCalendarAndIncludeBusyEventsTrue(Calendar calendar);
 }

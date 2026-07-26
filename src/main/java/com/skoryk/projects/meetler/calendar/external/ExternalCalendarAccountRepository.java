@@ -5,6 +5,7 @@ import com.skoryk.projects.meetler.user.AppUser;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ExternalCalendarAccountRepository
@@ -14,6 +15,9 @@ public interface ExternalCalendarAccountRepository
 
   List<ExternalCalendarAccount> findByUserAndProviderAndRevokedAtIsNull(
       AppUser user, CalendarProvider provider);
+
+  @EntityGraph(attributePaths = "user")
+  List<ExternalCalendarAccount> findByProviderAndRevokedAtIsNull(CalendarProvider provider);
 
   Optional<ExternalCalendarAccount> findByUserAndProviderAndExternalAccountId(
       AppUser user, CalendarProvider provider, String externalAccountId);

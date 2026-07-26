@@ -38,6 +38,10 @@ public class UserSubscriptionService {
         subscriptionPlanRepository
             .findByCodeAndActiveTrue(planCode)
             .orElseThrow(() -> new IllegalArgumentException("Subscription plan not found"));
+    if (user.getRole() == AppUserRole.GUEST
+        && !SubscriptionUsageService.DEFAULT_PLAN_CODE.equals(plan.getCode())) {
+      throw new IllegalArgumentException("Guest accounts must remain on the FREE plan");
+    }
 
     OffsetDateTime now = OffsetDateTime.now();
     userSubscriptionRepository

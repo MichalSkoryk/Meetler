@@ -1,6 +1,9 @@
 package com.skoryk.projects.meetler.common;
 
 import com.skoryk.projects.meetler.subscription.SubscriptionLimitExceededException;
+import com.skoryk.projects.meetler.subscription.billing.BillingUnavailableException;
+import com.skoryk.projects.meetler.subscription.billing.GuestBillingNotAllowedException;
+import com.skoryk.projects.meetler.subscription.billing.InvalidBillingWebhookException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import java.time.OffsetDateTime;
@@ -72,6 +75,26 @@ public class ApiExceptionHandler {
       SubscriptionLimitExceededException ex, HttpServletRequest request) {
     return error(
         HttpStatus.CONFLICT, "SUBSCRIPTION_LIMIT_EXCEEDED", ex.getMessage(), null, request);
+  }
+
+  @ExceptionHandler(GuestBillingNotAllowedException.class)
+  public ResponseEntity<Map<String, Object>> handleGuestBillingNotAllowed(
+      GuestBillingNotAllowedException ex, HttpServletRequest request) {
+    return error(HttpStatus.FORBIDDEN, "GUEST_BILLING_NOT_ALLOWED", ex.getMessage(), null, request);
+  }
+
+  @ExceptionHandler(InvalidBillingWebhookException.class)
+  public ResponseEntity<Map<String, Object>> handleInvalidBillingWebhook(
+      InvalidBillingWebhookException ex, HttpServletRequest request) {
+    return error(
+        HttpStatus.UNAUTHORIZED, "INVALID_BILLING_WEBHOOK", ex.getMessage(), null, request);
+  }
+
+  @ExceptionHandler(BillingUnavailableException.class)
+  public ResponseEntity<Map<String, Object>> handleBillingUnavailable(
+      BillingUnavailableException ex, HttpServletRequest request) {
+    return error(
+        HttpStatus.SERVICE_UNAVAILABLE, "BILLING_UNAVAILABLE", ex.getMessage(), null, request);
   }
 
   @ExceptionHandler(IllegalStateException.class)

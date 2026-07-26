@@ -16,6 +16,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @ExtendWith(MockitoExtension.class)
@@ -24,6 +25,7 @@ class AppUserServiceTest {
   @Mock private AppUserRepository appUserRepository;
   @Mock private UserAuthIdentityRepository identityRepository;
   @Mock private PasswordEncoder passwordEncoder;
+  @Mock private ApplicationEventPublisher eventPublisher;
 
   @InjectMocks private AppUserService service;
 
@@ -92,6 +94,24 @@ class AppUserServiceTest {
     assertThatThrownBy(() -> service.setInitialPassword(user, "new"))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("This user already has password");
+  }
+
+  @Test
+  void setInitialPasswordConvertsGuestToUser() {
+    AppUser guest = user();
+    guest.setRole(AppUserRole.GUEST);
+    when(appUserRepository.findById(guest.getId())).thenReturn(Optional.of(guest));
+    when(passwordEncoder.encode("new-password")).thenReturn("new-hash");
+    when(identityRepository.findByUserAndProviderAndProviderUserId(
+            guest, AuthProvider.INTERNAL, guest.getEmail()))
+        .thenReturn(Optional.empty());
+    when(appUserRepository.save(guest)).thenReturn(guest);
+
+    service.setInitialPassword(guest, "new-password");
+
+    assertThat(guest.getRole()).isEqualTo(AppUserRole.USER);
+    assertThat(guest.getUpgradedAt()).isNotNull();
+    verify(eventPublisher).publishEvent(any(AccountConvertedEvent.class));
   }
 
   private AppUser user() {

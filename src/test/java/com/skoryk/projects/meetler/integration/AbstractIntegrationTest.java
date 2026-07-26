@@ -18,7 +18,8 @@ import org.testcontainers.containers.PostgreSQLContainer;
     properties = {
       "spring.docker.compose.enabled=false",
       "spring.jpa.hibernate.ddl-auto=validate",
-      "spring.flyway.enabled=true"
+      "spring.flyway.enabled=true",
+      "external-calendar.google.sync.enabled=false"
     })
 @AutoConfigureMockMvc
 abstract class AbstractIntegrationTest {

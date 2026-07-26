@@ -10,6 +10,7 @@ import com.skoryk.projects.meetler.auth.token.RefreshTokenService;
 import com.skoryk.projects.meetler.user.AppUser;
 import com.skoryk.projects.meetler.user.AppUserRepository;
 import com.skoryk.projects.meetler.user.AppUserRole;
+import com.skoryk.projects.meetler.user.AppUserService;
 import com.skoryk.projects.meetler.user.AuthProvider;
 import java.time.OffsetDateTime;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,7 @@ public class AuthService {
   private final PasswordEncoder passwordEncoder;
   private final JwtService jwtService;
   private final RefreshTokenService refreshTokenService;
+  private final AppUserService appUserService;
 
   @Transactional
   public AuthResponse register(RegisterRequest request) {
@@ -116,7 +118,7 @@ public class AuthService {
 
     if (userFromIdentity != null) {
       ensureActive(userFromIdentity);
-      return issueTokens(userFromIdentity);
+      return issueTokens(appUserService.convertGuestToUser(userFromIdentity));
     }
 
     AppUser user =
@@ -125,7 +127,7 @@ public class AuthService {
             .map(
                 existingUser -> {
                   ensureActive(existingUser);
-                  return existingUser;
+                  return appUserService.convertGuestToUser(existingUser);
                 })
             .orElseGet(
                 () ->

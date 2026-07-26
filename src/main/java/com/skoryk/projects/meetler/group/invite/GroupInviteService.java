@@ -23,7 +23,8 @@ public class GroupInviteService {
   private final GroupMemberService memberService;
   private final GroupPermissionService groupPermissionService;
 
-  public String createInvite(
+  @Transactional
+  public GroupInviteResponse createInvite(
       UUID groupId, AppUser user, Integer maxUses, OffsetDateTime expiresAt) {
     Group group =
         groupRepository
@@ -46,9 +47,9 @@ public class GroupInviteService {
             .createdAt(OffsetDateTime.now())
             .build();
 
-    inviteRepository.save(invite);
+    GroupInvite savedInvite = inviteRepository.save(invite);
 
-    return code;
+    return toResponse(savedInvite);
   }
 
   @Transactional(readOnly = true)

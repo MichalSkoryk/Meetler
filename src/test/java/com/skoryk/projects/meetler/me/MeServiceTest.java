@@ -9,6 +9,7 @@ import com.skoryk.projects.meetler.calendar.external.ExternalCalendarAccount;
 import com.skoryk.projects.meetler.calendar.external.ExternalCalendarAccountRepository;
 import com.skoryk.projects.meetler.subscription.SubscriptionUsageResponse;
 import com.skoryk.projects.meetler.subscription.SubscriptionUsageService;
+import com.skoryk.projects.meetler.subscription.billing.BillingSynchronizationService;
 import com.skoryk.projects.meetler.user.AppUser;
 import com.skoryk.projects.meetler.user.AppUserRole;
 import java.util.List;
@@ -23,6 +24,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class MeServiceTest {
 
   @Mock private SubscriptionUsageService subscriptionUsageService;
+  @Mock private BillingSynchronizationService billingSynchronizationService;
   @Mock private ExternalCalendarAccountRepository externalCalendarAccountRepository;
 
   @InjectMocks private MeService service;

@@ -1,5 +1,6 @@
 package com.skoryk.projects.meetler.calendar.external.google;
 
+import com.skoryk.projects.meetler.availability.repository.AvailabilityTemplateSourceCalendarRepository;
 import com.skoryk.projects.meetler.calendar.Calendar;
 import com.skoryk.projects.meetler.calendar.CalendarProvider;
 import com.skoryk.projects.meetler.calendar.CalendarRepository;
@@ -33,6 +34,7 @@ public class GoogleCalendarImportService {
   private final ExternalCalendarAccountRepository accountRepository;
   private final CalendarRepository calendarRepository;
   private final CalendarEventRepository eventRepository;
+  private final AvailabilityTemplateSourceCalendarRepository sourceCalendarRepository;
   private final GoogleCalendarTokenService tokenService;
   private final RestClient restClient = RestClient.create();
 
@@ -58,8 +60,10 @@ public class GoogleCalendarImportService {
       for (GoogleCalendarResponse googleCalendar : calendarList.getItems()) {
         Calendar calendar = upsertCalendar(user, account, googleCalendar);
         calendarsImported++;
-        eventsImported +=
-            importEvents(calendar, accessToken, googleCalendar.getId(), range.from(), range.to());
+        if (shouldImportEvents(calendar)) {
+          eventsImported +=
+              importEvents(calendar, accessToken, googleCalendar.getId(), range.from(), range.to());
+        }
       }
 
       account.setLastSyncedAt(OffsetDateTime.now());
@@ -145,28 +149,37 @@ public class GoogleCalendarImportService {
 
   private Calendar upsertCalendar(
       AppUser user, ExternalCalendarAccount account, GoogleCalendarResponse googleCalendar) {
+    var existingCalendar =
+        calendarRepository.findByUserAndProviderAndExternalId(
+            user, CalendarProvider.GOOGLE, googleCalendar.getId());
+    boolean isNewCalendar = existingCalendar.isEmpty();
     Calendar calendar =
-        calendarRepository
-            .findByUserAndProviderAndExternalId(
-                user, CalendarProvider.GOOGLE, googleCalendar.getId())
-            .orElseGet(
-                () ->
-                    Calendar.builder()
-                        .user(user)
-                        .provider(CalendarProvider.GOOGLE)
-                        .externalId(googleCalendar.getId())
-                        .isEditable(false)
-                        .isActive(true)
-                        .syncDirection(CalendarSynchronizationType.FROM_PROVIDER)
-                        .build());
+        existingCalendar.orElseGet(
+            () ->
+                Calendar.builder()
+                    .user(user)
+                    .provider(CalendarProvider.GOOGLE)
+                    .externalId(googleCalendar.getId())
+                    .isEditable(false)
+                    .isActive(true)
+                    .syncDirection(CalendarSynchronizationType.FROM_PROVIDER)
+                    .build());
 
     calendar.setName(
         googleCalendar.getSummary() == null ? "Google Calendar" : googleCalendar.getSummary());
     calendar.setColor(googleCalendar.getBackgroundColor());
     calendar.setExternalCalendarAccount(account);
-    calendar.setActive(
-        Boolean.TRUE.equals(googleCalendar.getSelected()) || googleCalendar.getSelected() == null);
+    if (isNewCalendar) {
+      calendar.setActive(
+          Boolean.TRUE.equals(googleCalendar.getSelected())
+              || googleCalendar.getSelected() == null);
+    }
     return calendarRepository.save(calendar);
+  }
+
+  private boolean shouldImportEvents(Calendar calendar) {
+    return calendar.isActive()
+        || sourceCalendarRepository.existsByCalendarAndIncludeBusyEventsTrue(calendar);
   }
 
   private OffsetDateTime parseGoogleDate(GoogleCalendarEventDate date) {
