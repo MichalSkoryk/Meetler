@@ -25,8 +25,8 @@ public class GroupInviteController implements GroupInviteApi {
   @Override
   public ResponseEntity<GroupInviteResponse> createInvite(
       UUID groupId, InviteRequest request, AppUser user) {
-    String code = inviteService.createInvite(groupId, user, request.maxUses, request.expiresAt);
-    return ResponseEntity.ok(GroupInviteResponse.builder().code(code).build());
+    return ResponseEntity.ok(
+        inviteService.createInvite(groupId, user, request.maxUses, request.expiresAt));
   }
 
   @Override

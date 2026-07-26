@@ -19,6 +19,8 @@ public interface AvailabilityTemplateRepository extends JpaRepository<Availabili
 
   Optional<AvailabilityTemplate> findByIdAndUser(UUID id, AppUser user);
 
+  Optional<AvailabilityTemplate> findByUserAndIsDefaultTrue(AppUser user);
+
   long countByUser(AppUser user);
 
   boolean existsByUser(AppUser user);

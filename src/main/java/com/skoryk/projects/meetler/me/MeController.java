@@ -21,4 +21,9 @@ public class MeController implements MeApi {
   public ResponseEntity<SubscriptionUsageResponse> getSubscriptionUsage(AppUser user) {
     return ResponseEntity.ok(meService.getSubscriptionUsage(user));
   }
+
+  @Override
+  public ResponseEntity<SubscriptionUsageResponse> synchronizeSubscription(AppUser user) {
+    return ResponseEntity.ok(meService.synchronizeSubscription(user));
+  }
 }

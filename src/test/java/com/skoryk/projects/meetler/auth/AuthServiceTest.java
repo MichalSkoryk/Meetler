@@ -17,6 +17,7 @@ import com.skoryk.projects.meetler.auth.token.RefreshTokenService;
 import com.skoryk.projects.meetler.user.AppUser;
 import com.skoryk.projects.meetler.user.AppUserRepository;
 import com.skoryk.projects.meetler.user.AppUserRole;
+import com.skoryk.projects.meetler.user.AppUserService;
 import com.skoryk.projects.meetler.user.AuthProvider;
 import java.time.OffsetDateTime;
 import java.util.Optional;
@@ -36,6 +37,7 @@ class AuthServiceTest {
   @Mock private PasswordEncoder passwordEncoder;
   @Mock private JwtService jwtService;
   @Mock private RefreshTokenService refreshTokenService;
+  @Mock private AppUserService appUserService;
 
   @InjectMocks private AuthService service;
 
@@ -110,6 +112,7 @@ class AuthServiceTest {
     when(identityRepository.findByUserAndProviderAndProviderUserId(
             user, AuthProvider.GOOGLE, "google-id"))
         .thenReturn(Optional.empty());
+    when(appUserService.convertGuestToUser(user)).thenReturn(user);
     when(jwtService.generateToken(user.getId(), user.getEmail())).thenReturn("access");
     when(refreshTokenService.rotateRefreshToken(user)).thenReturn("refresh");
 
@@ -117,6 +120,31 @@ class AuthServiceTest {
 
     assertThat(response.getAccessToken()).isEqualTo("access");
     verify(identityRepository).save(any(UserAuthIdentity.class));
+  }
+
+  @Test
+  void authenticateGoogleConvertsExistingGuest() {
+    AppUser guest = user();
+    guest.setRole(AppUserRole.GUEST);
+    when(identityRepository.findByProviderAndProviderUserId(AuthProvider.GOOGLE, "google-id"))
+        .thenReturn(Optional.empty());
+    when(userRepository.findByEmail(guest.getEmail())).thenReturn(Optional.of(guest));
+    when(appUserService.convertGuestToUser(guest))
+        .thenAnswer(
+            invocation -> {
+              guest.setRole(AppUserRole.USER);
+              return guest;
+            });
+    when(identityRepository.findByUserAndProviderAndProviderUserId(
+            guest, AuthProvider.GOOGLE, "google-id"))
+        .thenReturn(Optional.empty());
+    when(jwtService.generateToken(guest.getId(), guest.getEmail())).thenReturn("access");
+    when(refreshTokenService.rotateRefreshToken(guest)).thenReturn("refresh");
+
+    service.authenticateGoogleUser("google-id", guest.getEmail(), "Guest");
+
+    assertThat(guest.getRole()).isEqualTo(AppUserRole.USER);
+    verify(appUserService).convertGuestToUser(guest);
   }
 
   private RegisterRequest registerRequest() {

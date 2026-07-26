@@ -32,11 +32,15 @@ public class GroupMemberService {
       return; // already a member
     }
 
+    AvailabilityTemplate defaultTemplate =
+        availabilityTemplateRepository.findByUserAndIsDefaultTrue(user).orElse(null);
+
     GroupMember member =
         GroupMember.builder()
             .group(group)
             .user(user)
             .role(role)
+            .availabilityTemplate(defaultTemplate)
             .joinedAt(OffsetDateTime.now())
             .build();
 

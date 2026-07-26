@@ -6,6 +6,7 @@ import java.time.OffsetDateTime;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +19,7 @@ public class AppUserService {
   private final AppUserRepository appUserRepository;
   private final UserAuthIdentityRepository identityRepository;
   private final PasswordEncoder passwordEncoder;
+  private final ApplicationEventPublisher eventPublisher;
 
   public AppUser createUser(String email) {
     AppUser appUser =
@@ -44,14 +46,7 @@ public class AppUserService {
             .findById(userId)
             .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-    if (appUser.getRole() == AppUserRole.USER) {
-      return appUser;
-    }
-
-    appUser.setRole(AppUserRole.USER);
-    appUser.setUpgradedAt(OffsetDateTime.now());
-
-    return appUserRepository.save(appUser);
+    return convertGuestToUser(appUser);
   }
 
   public AppUser updateName(UUID userId, String name) {
@@ -129,5 +124,17 @@ public class AppUserService {
     appUser.setPasswordHash(passwordEncoder.encode(initialPassword));
     appUserRepository.save(appUser);
     ensureInternalIdentity(appUser);
+    convertGuestToUser(appUser);
+  }
+
+  public AppUser convertGuestToUser(AppUser appUser) {
+    if (appUser.getRole() != AppUserRole.GUEST) {
+      return appUser;
+    }
+    appUser.setRole(AppUserRole.USER);
+    appUser.setUpgradedAt(OffsetDateTime.now());
+    AppUser converted = appUserRepository.save(appUser);
+    eventPublisher.publishEvent(new AccountConvertedEvent(converted.getId()));
+    return converted;
   }
 }

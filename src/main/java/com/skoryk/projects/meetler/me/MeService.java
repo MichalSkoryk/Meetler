@@ -4,6 +4,7 @@ import com.skoryk.projects.meetler.calendar.CalendarProvider;
 import com.skoryk.projects.meetler.calendar.external.ExternalCalendarAccountRepository;
 import com.skoryk.projects.meetler.subscription.SubscriptionUsageResponse;
 import com.skoryk.projects.meetler.subscription.SubscriptionUsageService;
+import com.skoryk.projects.meetler.subscription.billing.BillingSynchronizationService;
 import com.skoryk.projects.meetler.user.AppUser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Service;
 public class MeService {
 
   private final SubscriptionUsageService subscriptionUsageService;
+  private final BillingSynchronizationService billingSynchronizationService;
   private final ExternalCalendarAccountRepository externalCalendarAccountRepository;
 
   public MeBootstrapResponse getBootstrap(AppUser user) {
@@ -24,6 +26,11 @@ public class MeService {
   }
 
   public SubscriptionUsageResponse getSubscriptionUsage(AppUser user) {
+    return subscriptionUsageService.getUsage(user);
+  }
+
+  public SubscriptionUsageResponse synchronizeSubscription(AppUser user) {
+    billingSynchronizationService.synchronizeCurrentUser(user);
     return subscriptionUsageService.getUsage(user);
   }
 

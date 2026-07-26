@@ -35,6 +35,8 @@ public class SecurityConfig {
                     .permitAll()
                     .requestMatchers("/api/auth/**")
                     .permitAll()
+                    .requestMatchers("/api/billing/revenuecat/webhook")
+                    .permitAll()
                     .requestMatchers("/api-docs", "/api-docs/**")
                     .permitAll()
                     .requestMatchers("/docs", "/docs/**")

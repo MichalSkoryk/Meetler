@@ -13,8 +13,10 @@ public class AvailabilityTemplateResponse {
 
   private UUID id;
   private String name;
+
   @JsonProperty("isDefault")
   private boolean isDefault;
+
   private String timezone;
   private AvailabilityBlockStatus defaultAvailabilityStatus;
   private OffsetDateTime createdAt;

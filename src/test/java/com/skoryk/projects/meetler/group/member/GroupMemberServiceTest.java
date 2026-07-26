@@ -20,6 +20,7 @@ import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -44,6 +45,24 @@ class GroupMemberServiceTest {
     service.addMember(group.getId(), user, GroupRole.MEMBER);
 
     verify(memberRepository, never()).save(any());
+  }
+
+  @Test
+  void addMemberAssignsUsersDefaultAvailabilityTemplate() {
+    Group group = group();
+    AppUser user = user();
+    AvailabilityTemplate template = template(user);
+    template.setDefault(true);
+    when(groupRepository.findById(group.getId())).thenReturn(Optional.of(group));
+    when(memberRepository.findByGroupAndUser(group, user)).thenReturn(Optional.empty());
+    when(availabilityTemplateRepository.findByUserAndIsDefaultTrue(user))
+        .thenReturn(Optional.of(template));
+
+    service.addMember(group.getId(), user, GroupRole.MEMBER);
+
+    ArgumentCaptor<GroupMember> memberCaptor = ArgumentCaptor.forClass(GroupMember.class);
+    verify(memberRepository).save(memberCaptor.capture());
+    assertThat(memberCaptor.getValue().getAvailabilityTemplate()).isSameAs(template);
   }
 
   @Test

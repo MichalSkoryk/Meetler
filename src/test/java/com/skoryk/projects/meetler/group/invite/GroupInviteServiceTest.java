@@ -3,6 +3,7 @@ package com.skoryk.projects.meetler.group.invite;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -47,6 +48,35 @@ class GroupInviteServiceTest {
         .hasMessage("User not allowed to create invites");
 
     verify(inviteRepository, never()).save(any());
+  }
+
+  @Test
+  void createInviteReturnsCompletePersistedInvite() {
+    Group group = group();
+    AppUser user = user();
+    UUID inviteId = UUID.randomUUID();
+    OffsetDateTime expiresAt = OffsetDateTime.now().plusDays(7);
+    when(groupRepository.findById(group.getId())).thenReturn(Optional.of(group));
+    when(groupPermissionService.isAdmin(group, user)).thenReturn(true);
+    doAnswer(
+            invocation -> {
+              GroupInvite invite = invocation.getArgument(0);
+              invite.setId(inviteId);
+              return invite;
+            })
+        .when(inviteRepository)
+        .save(any(GroupInvite.class));
+
+    GroupInviteResponse response = service.createInvite(group.getId(), user, 10, expiresAt);
+
+    assertThat(response.getId()).isEqualTo(inviteId);
+    assertThat(response.getCode()).hasSize(8);
+    assertThat(response.getMaxUses()).isEqualTo(10);
+    assertThat(response.getUses()).isZero();
+    assertThat(response.getExpiresAt()).isEqualTo(expiresAt);
+    assertThat(response.getCreatedAt()).isNotNull();
+    assertThat(response.getRevokedAt()).isNull();
+    assertThat(response.getRevokedByUserId()).isNull();
   }
 
   @Test

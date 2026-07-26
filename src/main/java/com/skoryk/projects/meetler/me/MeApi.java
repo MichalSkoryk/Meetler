@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 @Tag(name = "Me")
@@ -26,5 +27,13 @@ public interface MeApi {
           "Returns the authenticated user's current subscription plan limits and current usage.")
   @GetMapping("/subscription/usage")
   ResponseEntity<SubscriptionUsageResponse> getSubscriptionUsage(
+      @AuthenticationPrincipal AppUser user);
+
+  @Operation(
+      summary = "Synchronize my subscription",
+      description =
+          "Refreshes the authenticated user's RevenueCat entitlements. Guest accounts cannot synchronize or purchase plans.")
+  @PostMapping("/subscription/sync")
+  ResponseEntity<SubscriptionUsageResponse> synchronizeSubscription(
       @AuthenticationPrincipal AppUser user);
 }

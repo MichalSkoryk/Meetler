@@ -2,12 +2,20 @@ package com.skoryk.projects.meetler.subscription;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.skoryk.projects.meetler.availability.repository.AvailabilityTemplateRepository;
 import com.skoryk.projects.meetler.group.member.GroupMemberRepository;
 import com.skoryk.projects.meetler.group.member.GroupRole;
+import com.skoryk.projects.meetler.subscription.billing.BillingCustomerRepository;
+import com.skoryk.projects.meetler.subscription.billing.BillingEntitlement;
+import com.skoryk.projects.meetler.subscription.billing.BillingEntitlementRepository;
+import com.skoryk.projects.meetler.subscription.billing.BillingEntitlementStatus;
+import com.skoryk.projects.meetler.subscription.billing.BillingEnvironment;
+import com.skoryk.projects.meetler.subscription.billing.BillingMode;
+import com.skoryk.projects.meetler.subscription.billing.BillingProperties;
 import com.skoryk.projects.meetler.user.AppUser;
 import com.skoryk.projects.meetler.user.AppUserRole;
 import java.time.OffsetDateTime;
@@ -26,6 +34,9 @@ class SubscriptionUsageServiceTest {
   @Mock private UserSubscriptionRepository userSubscriptionRepository;
   @Mock private GroupMemberRepository groupMemberRepository;
   @Mock private AvailabilityTemplateRepository availabilityTemplateRepository;
+  @Mock private BillingProperties billingProperties;
+  @Mock private BillingCustomerRepository billingCustomerRepository;
+  @Mock private BillingEntitlementRepository billingEntitlementRepository;
 
   @InjectMocks private SubscriptionUsageService service;
 
@@ -88,8 +99,46 @@ class SubscriptionUsageServiceTest {
     assertThat(response.getMaxOwnedGroups()).isEqualTo(5);
     assertThat(response.getAvailabilityTemplatesUsed()).isEqualTo(3);
     assertThat(response.getMaxAvailabilityTemplates()).isEqualTo(5);
+    assertThat(response.isCanPurchase()).isFalse();
     verify(groupMemberRepository).countByUserAndRole(user, GroupRole.OWNER);
     verify(availabilityTemplateRepository).countByUser(user);
+  }
+
+  @Test
+  void guestAlwaysUsesFreePlanEvenWhenPaidSourcesExist() {
+    AppUser guest = user();
+    guest.setRole(AppUserRole.GUEST);
+    SubscriptionPlan free = plan("FREE", 5, 5);
+    when(planRepository.findByCodeAndActiveTrue("FREE")).thenReturn(Optional.of(free));
+
+    SubscriptionPlan result = service.activePlanFor(guest);
+
+    assertThat(result).isSameAs(free);
+    verify(userSubscriptionRepository, never())
+        .findFirstByUserAndStatusOrderByStartedAtDesc(guest, SubscriptionStatus.ACTIVE);
+    verify(billingEntitlementRepository, never()).findByCustomerUser(guest);
+  }
+
+  @Test
+  void productionModeIgnoresSandboxEntitlements() {
+    AppUser user = user();
+    SubscriptionPlan free = plan("FREE", 5, 5);
+    when(userSubscriptionRepository.findFirstByUserAndStatusOrderByStartedAtDesc(
+            user, SubscriptionStatus.ACTIVE))
+        .thenReturn(Optional.empty());
+    when(planRepository.findByCodeAndActiveTrue("FREE")).thenReturn(Optional.of(free));
+    when(billingProperties.getMode()).thenReturn(BillingMode.PRODUCTION);
+    when(billingEntitlementRepository.findByCustomerUser(user))
+        .thenReturn(
+            java.util.List.of(
+                BillingEntitlement.builder()
+                    .planCode("PRO")
+                    .environment(BillingEnvironment.SANDBOX)
+                    .status(BillingEntitlementStatus.ACTIVE)
+                    .expiresAt(OffsetDateTime.now().plusDays(1))
+                    .build()));
+
+    assertThat(service.activePlanFor(user)).isSameAs(free);
   }
 
   private void activePlan(AppUser user, SubscriptionPlan plan) {

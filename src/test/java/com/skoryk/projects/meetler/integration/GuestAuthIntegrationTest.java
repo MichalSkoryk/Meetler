@@ -40,6 +40,14 @@ class GuestAuthIntegrationTest extends AbstractIntegrationTest {
 
     String accessToken = body(loginResult).get("accessToken").asText();
 
+    MvcResult billingSyncResult =
+        mockMvc
+            .perform(post("/api/me/subscription/sync").header("Authorization", bearer(accessToken)))
+            .andExpect(status().isForbidden())
+            .andReturn();
+
+    assertThat(body(billingSyncResult).get("code").asText()).isEqualTo("GUEST_BILLING_NOT_ALLOWED");
+
     mockMvc
         .perform(
             post("/api/availability/templates")
