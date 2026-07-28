@@ -1,11 +1,15 @@
 package com.skoryk.projects.meetler.me;
 
+import com.skoryk.projects.meetler.auth.identity.UserAuthIdentityRepository;
 import com.skoryk.projects.meetler.calendar.CalendarProvider;
 import com.skoryk.projects.meetler.calendar.external.ExternalCalendarAccountRepository;
 import com.skoryk.projects.meetler.subscription.SubscriptionUsageResponse;
 import com.skoryk.projects.meetler.subscription.SubscriptionUsageService;
 import com.skoryk.projects.meetler.subscription.billing.BillingSynchronizationService;
 import com.skoryk.projects.meetler.user.AppUser;
+import com.skoryk.projects.meetler.user.AuthProvider;
+import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -16,12 +20,14 @@ public class MeService {
   private final SubscriptionUsageService subscriptionUsageService;
   private final BillingSynchronizationService billingSynchronizationService;
   private final ExternalCalendarAccountRepository externalCalendarAccountRepository;
+  private final UserAuthIdentityRepository userAuthIdentityRepository;
 
   public MeBootstrapResponse getBootstrap(AppUser user) {
     return MeBootstrapResponse.builder()
         .user(toUserResponse(user))
         .subscription(getSubscriptionUsage(user))
         .connectedCalendars(getConnectedCalendars(user))
+        .connectedLoginMethods(getConnectedLoginMethods(user))
         .build();
   }
 
@@ -48,6 +54,19 @@ public class MeService {
     return ConnectedCalendarsResponse.builder()
         .google(hasProvider(user, CalendarProvider.GOOGLE))
         .microsoft(hasProvider(user, CalendarProvider.TEAMS))
+        .build();
+  }
+
+  private ConnectedLoginMethodsResponse getConnectedLoginMethods(AppUser user) {
+    Set<AuthProvider> providers =
+        userAuthIdentityRepository.findByUser(user).stream()
+            .map(identity -> identity.getProvider())
+            .collect(Collectors.toSet());
+
+    return ConnectedLoginMethodsResponse.builder()
+        .password(providers.contains(AuthProvider.INTERNAL))
+        .google(providers.contains(AuthProvider.GOOGLE))
+        .microsoft(providers.contains(AuthProvider.MICROSOFT))
         .build();
   }
 

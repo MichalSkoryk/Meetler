@@ -4,6 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.skoryk.projects.meetler.auth.identity.UserAuthIdentity;
+import com.skoryk.projects.meetler.auth.identity.UserAuthIdentityRepository;
 import com.skoryk.projects.meetler.calendar.CalendarProvider;
 import com.skoryk.projects.meetler.calendar.external.ExternalCalendarAccount;
 import com.skoryk.projects.meetler.calendar.external.ExternalCalendarAccountRepository;
@@ -12,6 +14,7 @@ import com.skoryk.projects.meetler.subscription.SubscriptionUsageService;
 import com.skoryk.projects.meetler.subscription.billing.BillingSynchronizationService;
 import com.skoryk.projects.meetler.user.AppUser;
 import com.skoryk.projects.meetler.user.AppUserRole;
+import com.skoryk.projects.meetler.user.AuthProvider;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -26,6 +29,7 @@ class MeServiceTest {
   @Mock private SubscriptionUsageService subscriptionUsageService;
   @Mock private BillingSynchronizationService billingSynchronizationService;
   @Mock private ExternalCalendarAccountRepository externalCalendarAccountRepository;
+  @Mock private UserAuthIdentityRepository userAuthIdentityRepository;
 
   @InjectMocks private MeService service;
 
@@ -48,6 +52,9 @@ class MeServiceTest {
     when(externalCalendarAccountRepository.findByUserAndProviderAndRevokedAtIsNull(
             user, CalendarProvider.TEAMS))
         .thenReturn(List.of());
+    when(userAuthIdentityRepository.findByUser(user))
+        .thenReturn(
+            List.of(identity(user, AuthProvider.INTERNAL), identity(user, AuthProvider.MICROSOFT)));
 
     MeBootstrapResponse response = service.getBootstrap(user);
 
@@ -59,6 +66,9 @@ class MeServiceTest {
     assertThat(response.getSubscription()).isSameAs(usage);
     assertThat(response.getConnectedCalendars().isGoogle()).isTrue();
     assertThat(response.getConnectedCalendars().isMicrosoft()).isFalse();
+    assertThat(response.getConnectedLoginMethods().isPassword()).isTrue();
+    assertThat(response.getConnectedLoginMethods().isGoogle()).isFalse();
+    assertThat(response.getConnectedLoginMethods().isMicrosoft()).isTrue();
   }
 
   @Test
@@ -75,6 +85,10 @@ class MeServiceTest {
 
   private ExternalCalendarAccount account() {
     return ExternalCalendarAccount.builder().id(UUID.randomUUID()).build();
+  }
+
+  private UserAuthIdentity identity(AppUser user, AuthProvider provider) {
+    return UserAuthIdentity.builder().user(user).provider(provider).build();
   }
 
   private AppUser user() {

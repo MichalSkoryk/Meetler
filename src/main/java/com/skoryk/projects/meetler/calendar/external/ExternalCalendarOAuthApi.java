@@ -1,5 +1,6 @@
 package com.skoryk.projects.meetler.calendar.external;
 
+import com.skoryk.projects.meetler.calendar.external.dto.ExternalCalendarAuthorizationResponse;
 import com.skoryk.projects.meetler.calendar.external.dto.ExternalCalendarImportResponse;
 import com.skoryk.projects.meetler.user.AppUser;
 import io.swagger.v3.oas.annotations.Operation;
@@ -15,6 +16,14 @@ import org.springframework.web.bind.annotation.RequestParam;
 @Tag(name = "External Calendar OAuth")
 @RequestMapping("/api/external-calendars")
 public interface ExternalCalendarOAuthApi {
+
+  @Operation(
+      summary = "Get Google Calendar authorization URL",
+      description =
+          "Creates a Google OAuth authorization URL for the authenticated user without redirecting the API request.")
+  @GetMapping("/google/authorization-url")
+  ResponseEntity<ExternalCalendarAuthorizationResponse> googleAuthorizationUrl(
+      @AuthenticationPrincipal AppUser user, @RequestParam(required = false) String returnUrl);
 
   @Operation(
       summary = "Connect Google Calendar",

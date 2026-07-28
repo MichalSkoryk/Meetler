@@ -2,6 +2,7 @@ package com.skoryk.projects.meetler.group.event;
 
 import com.skoryk.projects.meetler.user.AppUser;
 import java.time.OffsetDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -15,6 +16,9 @@ public interface GroupEventParticipantRepository
   List<GroupEventParticipant> findByGroupEvent(GroupEvent groupEvent);
 
   Optional<GroupEventParticipant> findByGroupEventAndUser(GroupEvent groupEvent, AppUser user);
+
+  List<GroupEventParticipant> findByGroupEventInAndUser(
+      Collection<GroupEvent> groupEvents, AppUser user);
 
   @Modifying
   @Query(

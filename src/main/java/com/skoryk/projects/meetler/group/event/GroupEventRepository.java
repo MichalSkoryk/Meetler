@@ -2,6 +2,7 @@ package com.skoryk.projects.meetler.group.event;
 
 import com.skoryk.projects.meetler.group.Group;
 import java.time.OffsetDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -22,4 +23,16 @@ public interface GroupEventRepository extends JpaRepository<GroupEvent, UUID> {
       order by e.startsAt asc
       """)
   List<GroupEvent> findByGroupOverlapping(Group group, OffsetDateTime from, OffsetDateTime to);
+
+  @Query(
+      """
+      select e
+      from GroupEvent e
+      where e.group in :groups
+        and e.endsAt > :now
+        and e.status <> :cancelledStatus
+      order by e.startsAt asc
+      """)
+  List<GroupEvent> findUpcomingByGroups(
+      Collection<Group> groups, OffsetDateTime now, GroupEventStatus cancelledStatus);
 }

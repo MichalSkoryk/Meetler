@@ -1,5 +1,6 @@
 package com.skoryk.projects.meetler.calendar.external;
 
+import com.skoryk.projects.meetler.calendar.external.dto.ExternalCalendarAuthorizationResponse;
 import com.skoryk.projects.meetler.calendar.external.dto.ExternalCalendarImportResponse;
 import com.skoryk.projects.meetler.calendar.external.google.GoogleCalendarImportService;
 import com.skoryk.projects.meetler.calendar.external.oauth.GoogleCalendarOAuthService;
@@ -17,6 +18,14 @@ public class ExternalCalendarOAuthController implements ExternalCalendarOAuthApi
 
   private final GoogleCalendarOAuthService googleCalendarOAuthService;
   private final GoogleCalendarImportService googleCalendarImportService;
+
+  @Override
+  public ResponseEntity<ExternalCalendarAuthorizationResponse> googleAuthorizationUrl(
+      AppUser user, String returnUrl) {
+    URI authorizationUri = googleCalendarOAuthService.buildAuthorizationUri(user, returnUrl);
+    return ResponseEntity.ok(
+        new ExternalCalendarAuthorizationResponse(authorizationUri.toString()));
+  }
 
   @Override
   public ResponseEntity<Void> connectGoogle(AppUser user, String returnUrl) {

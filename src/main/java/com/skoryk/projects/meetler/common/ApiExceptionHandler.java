@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
@@ -63,6 +64,7 @@ public class ApiExceptionHandler {
   @ExceptionHandler({
     MissingServletRequestParameterException.class,
     MethodArgumentTypeMismatchException.class,
+    HttpMessageNotReadableException.class,
     IllegalArgumentException.class
   })
   public ResponseEntity<Map<String, Object>> handleBadRequest(

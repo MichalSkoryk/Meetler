@@ -2,6 +2,7 @@ package com.skoryk.projects.meetler.group.member;
 
 import com.skoryk.projects.meetler.group.Group;
 import com.skoryk.projects.meetler.user.AppUser;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -14,6 +15,8 @@ public interface GroupMemberRepository extends JpaRepository<GroupMember, UUID> 
   long countByUserAndRole(AppUser user, GroupRole role);
 
   List<GroupMember> findByGroup(Group group);
+
+  List<GroupMember> findByGroupIn(Collection<Group> groups);
 
   Optional<GroupMember> findByGroupIdAndUserId(UUID groupId, UUID userId);
 
