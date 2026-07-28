@@ -6,8 +6,12 @@ import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import java.net.URI;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.Locale;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import javax.crypto.SecretKey;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -18,9 +22,13 @@ public class OAuthStateService {
   private static final Duration STATE_TTL = Duration.ofMinutes(10);
 
   private final SecretKey signingKey;
+  private final Set<Origin> allowedReturnOrigins;
 
-  public OAuthStateService(@Value("${jwt.secret}") String jwtSecret) {
+  public OAuthStateService(
+      @Value("${jwt.secret}") String jwtSecret,
+      @Value("${auth.oauth.allowed-return-origins:}") String allowedReturnOrigins) {
     this.signingKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtSecret));
+    this.allowedReturnOrigins = parseAllowedOrigins(allowedReturnOrigins);
   }
 
   public String createState(UUID userId, String provider, String returnUrl) {
@@ -103,9 +111,11 @@ public class OAuthStateService {
         return uri.toString();
       }
 
-      boolean localHost =
-          "localhost".equalsIgnoreCase(host) || "127.0.0.1".equals(host) || "::1".equals(host);
-      if (("http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme)) && localHost) {
+      boolean webUrl = "http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme);
+      if (webUrl
+          && host != null
+          && uri.getUserInfo() == null
+          && (isLocalHost(host) || allowedReturnOrigins.contains(Origin.from(uri)))) {
         return uri.toString();
       }
       throw new IllegalArgumentException("Invalid OAuth return URL");
@@ -116,6 +126,58 @@ public class OAuthStateService {
     }
 
     throw new IllegalArgumentException("Invalid OAuth return URL");
+  }
+
+  private Set<Origin> parseAllowedOrigins(String configuredOrigins) {
+    return Arrays.stream(configuredOrigins.split(","))
+        .map(String::trim)
+        .filter(origin -> !origin.isEmpty())
+        .map(this::parseAllowedOrigin)
+        .collect(Collectors.toUnmodifiableSet());
+  }
+
+  private Origin parseAllowedOrigin(String configuredOrigin) {
+    URI uri = URI.create(configuredOrigin);
+    String scheme = uri.getScheme();
+    boolean webOrigin = "http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme);
+    boolean rootPath =
+        uri.getPath() == null || uri.getPath().isEmpty() || "/".equals(uri.getPath());
+
+    if (!uri.isAbsolute()
+        || uri.isOpaque()
+        || !webOrigin
+        || uri.getHost() == null
+        || uri.getUserInfo() != null
+        || !rootPath
+        || uri.getQuery() != null
+        || uri.getFragment() != null) {
+      throw new IllegalArgumentException("Invalid configured OAuth return origin");
+    }
+
+    return Origin.from(uri);
+  }
+
+  private boolean isLocalHost(String host) {
+    if (host == null) {
+      return false;
+    }
+    String normalizedHost = host.replace("[", "").replace("]", "");
+    return "localhost".equalsIgnoreCase(normalizedHost)
+        || "127.0.0.1".equals(normalizedHost)
+        || "::1".equals(normalizedHost);
+  }
+
+  private record Origin(String scheme, String host, int port) {
+
+    private static Origin from(URI uri) {
+      String scheme = uri.getScheme().toLowerCase(Locale.ROOT);
+      String host = uri.getHost().toLowerCase(Locale.ROOT);
+      int port = uri.getPort();
+      if (port == -1) {
+        port = "https".equals(scheme) ? 443 : 80;
+      }
+      return new Origin(scheme, host, port);
+    }
   }
 
   public record OAuthUserState(UUID userId, String returnUrl) {}

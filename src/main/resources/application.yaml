@@ -57,6 +57,8 @@ email:
     api-url: ${RESEND_API_URL:https://api.resend.com}
 
 auth:
+  oauth:
+    allowed-return-origins: ${OAUTH_ALLOWED_RETURN_ORIGINS:}
   refresh-token:
     ttl-days: ${REFRESH_TOKEN_TTL_DAYS:30}
   password-reset:
