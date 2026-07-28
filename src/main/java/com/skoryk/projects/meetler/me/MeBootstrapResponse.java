@@ -10,4 +10,5 @@ public class MeBootstrapResponse {
   private MeUserResponse user;
   private SubscriptionUsageResponse subscription;
   private ConnectedCalendarsResponse connectedCalendars;
+  private ConnectedLoginMethodsResponse connectedLoginMethods;
 }

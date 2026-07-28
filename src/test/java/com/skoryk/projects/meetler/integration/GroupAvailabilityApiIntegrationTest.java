@@ -36,6 +36,8 @@ class GroupAvailabilityApiIntegrationTest extends AbstractIntegrationTest {
 
     assertSelectedTemplate(ownerToken, groupId, ownerTemplateId);
     assertSelectedTemplate(memberToken, groupId, memberTemplateId);
+    assertGroupSummary(ownerToken, groupId, "OWNER");
+    assertGroupSummary(memberToken, groupId, "MEMBER");
 
     MvcResult gridResult =
         mockMvc
@@ -182,5 +184,33 @@ class GroupAvailabilityApiIntegrationTest extends AbstractIntegrationTest {
                 .header(HttpHeaders.AUTHORIZATION, bearer(token)))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.availabilityTemplateId").value(templateId));
+  }
+
+  private void assertGroupSummary(String token, String groupId, String expectedRole)
+      throws Exception {
+    MvcResult result =
+        mockMvc
+            .perform(get("/api/groups").header(HttpHeaders.AUTHORIZATION, bearer(token)))
+            .andExpect(status().isOk())
+            .andReturn();
+
+    JsonNode summary = null;
+    for (JsonNode group : body(result)) {
+      if (groupId.equals(group.get("id").asText())) {
+        summary = group;
+        break;
+      }
+    }
+
+    assertThat(summary).isNotNull();
+    assertThat(summary.get("name").asText()).isEqualTo("Weekend plans");
+    assertThat(summary.get("role").asText()).isEqualTo(expectedRole);
+    assertThat(summary.get("memberCount").asInt()).isEqualTo(2);
+    assertThat(summary.get("hasAvailabilityTemplate").asBoolean()).isTrue();
+    assertThat(summary.get("pendingResponseCount").asInt()).isZero();
+    assertThat(summary.get("nextEvent").isNull()).isTrue();
+    assertThat(summary.get("nextPendingEvent").isNull()).isTrue();
+    assertThat(summary.hasNonNull("createdAt")).isTrue();
+    assertThat(summary.hasNonNull("updatedAt")).isTrue();
   }
 }

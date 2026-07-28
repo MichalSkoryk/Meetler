@@ -22,14 +22,15 @@ public class GroupMemberService {
   private final GroupMemberRepository memberRepository;
   private final AvailabilityTemplateRepository availabilityTemplateRepository;
 
-  public void addMember(UUID groupId, AppUser user, GroupRole role) {
+  public GroupMember addMember(UUID groupId, AppUser user, GroupRole role) {
     Group group =
         groupRepository
             .findById(groupId)
             .orElseThrow(() -> new IllegalArgumentException("Group not found"));
 
-    if (memberRepository.findByGroupAndUser(group, user).isPresent()) {
-      return; // already a member
+    GroupMember existingMember = memberRepository.findByGroupAndUser(group, user).orElse(null);
+    if (existingMember != null) {
+      return existingMember;
     }
 
     AvailabilityTemplate defaultTemplate =
@@ -44,7 +45,7 @@ public class GroupMemberService {
             .joinedAt(OffsetDateTime.now())
             .build();
 
-    memberRepository.save(member);
+    return memberRepository.save(member);
   }
 
   @Transactional
