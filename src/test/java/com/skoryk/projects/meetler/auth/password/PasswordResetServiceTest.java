@@ -13,6 +13,7 @@ import com.skoryk.projects.meetler.auth.dto.PasswordResetRequest;
 import com.skoryk.projects.meetler.auth.dto.PasswordResetResponse;
 import com.skoryk.projects.meetler.auth.identity.UserAuthIdentityRepository;
 import com.skoryk.projects.meetler.auth.token.RefreshTokenRepository;
+import com.skoryk.projects.meetler.calendar.external.oauth.OAuthStateService;
 import com.skoryk.projects.meetler.email.EmailService;
 import com.skoryk.projects.meetler.user.AppUser;
 import com.skoryk.projects.meetler.user.AppUserRepository;
@@ -39,6 +40,7 @@ class PasswordResetServiceTest {
   @Mock private RefreshTokenRepository refreshTokenRepository;
   @Mock private PasswordEncoder passwordEncoder;
   @Mock private EmailService emailService;
+  @Mock private OAuthStateService returnUrlValidator;
 
   @InjectMocks private PasswordResetService service;
 
@@ -80,6 +82,23 @@ class PasswordResetServiceTest {
     verify(tokenRepository).save(tokenCaptor.capture());
     assertThat(tokenCaptor.getValue().getTokenHash()).hasSize(64);
     assertThat(tokenCaptor.getValue().getExpiresAt()).isAfter(OffsetDateTime.now());
+  }
+
+  @Test
+  void requestResetUsesValidatedMobileReturnUrl() {
+    PasswordResetRequest request = request();
+    request.setReturnUrl("https://meetler.example/mobile/auth/reset");
+    when(returnUrlValidator.validateReturnUrl(request.getReturnUrl()))
+        .thenReturn(request.getReturnUrl());
+    when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user()));
+    when(tokenRepository.save(any(PasswordResetToken.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+
+    PasswordResetResponse response = service.requestReset(request);
+
+    assertThat(response.getResetLink())
+        .startsWith("https://meetler.example/mobile/auth/reset?token=");
+    verify(returnUrlValidator).validateReturnUrl(request.getReturnUrl());
   }
 
   @Test

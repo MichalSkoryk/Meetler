@@ -6,6 +6,7 @@ import com.skoryk.projects.meetler.auth.dto.PasswordResetResponse;
 import com.skoryk.projects.meetler.auth.identity.UserAuthIdentity;
 import com.skoryk.projects.meetler.auth.identity.UserAuthIdentityRepository;
 import com.skoryk.projects.meetler.auth.token.RefreshTokenRepository;
+import com.skoryk.projects.meetler.calendar.external.oauth.OAuthStateService;
 import com.skoryk.projects.meetler.email.EmailService;
 import com.skoryk.projects.meetler.user.AppUser;
 import com.skoryk.projects.meetler.user.AppUserRepository;
@@ -22,6 +23,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.util.UriComponentsBuilder;
 
 @Service
 @RequiredArgsConstructor
@@ -35,6 +37,7 @@ public class PasswordResetService {
   private final RefreshTokenRepository refreshTokenRepository;
   private final PasswordEncoder passwordEncoder;
   private final EmailService emailService;
+  private final OAuthStateService returnUrlValidator;
 
   @Value("${auth.password-reset.token-ttl-minutes:30}")
   private long tokenTtlMinutes;
@@ -59,7 +62,7 @@ public class PasswordResetService {
             .expiresAt(expiresAt)
             .build());
 
-    String resetLink = resetUrl + "?token=" + URLEncoder.encode(rawToken, StandardCharsets.UTF_8);
+    String resetLink = createResetLink(request.getReturnUrl(), rawToken);
     emailService.sendPasswordResetLink(email, resetLink, expiresAt);
     return new PasswordResetResponse("If the account exists, a reset link was created", resetLink);
   }
@@ -106,6 +109,18 @@ public class PasswordResetService {
                         .providerEmail(user.getEmail())
                         .lastLoginAt(OffsetDateTime.now())
                         .build()));
+  }
+
+  private String createResetLink(String returnUrl, String rawToken) {
+    if (returnUrl == null || returnUrl.isBlank()) {
+      return resetUrl + "?token=" + URLEncoder.encode(rawToken, StandardCharsets.UTF_8);
+    }
+    String validatedReturnUrl = returnUrlValidator.validateReturnUrl(returnUrl);
+    return UriComponentsBuilder.fromUriString(validatedReturnUrl)
+        .queryParam("token", rawToken)
+        .build()
+        .encode()
+        .toUriString();
   }
 
   private String generateToken() {

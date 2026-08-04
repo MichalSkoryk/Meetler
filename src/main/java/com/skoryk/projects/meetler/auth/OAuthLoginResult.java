@@ -1,5 +1,5 @@
 package com.skoryk.projects.meetler.auth;
 
-import com.skoryk.projects.meetler.auth.dto.AuthResponse;
+import com.skoryk.projects.meetler.user.AppUser;
 
-public record OAuthLoginResult(AuthResponse authResponse, String returnUrl) {}
+public record OAuthLoginResult(AppUser user, String returnUrl, OAuthResponseMode responseMode) {}

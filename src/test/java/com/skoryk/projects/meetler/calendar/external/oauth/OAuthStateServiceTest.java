@@ -35,6 +35,19 @@ class OAuthStateServiceTest {
   }
 
   @Test
+  void purposeStateCarriesMobileResponseMode() {
+    String state =
+        service.createState(
+            "AUTH", "GOOGLE", HOSTED_FRONTEND + "/mobile/auth/callback", "mobile_code");
+
+    OAuthStateService.OAuthPurposeState result =
+        service.validatePurposeState(state, "AUTH", "GOOGLE");
+
+    assertThat(result.returnUrl()).isEqualTo(HOSTED_FRONTEND + "/mobile/auth/callback");
+    assertThat(result.responseMode()).isEqualTo("mobile_code");
+  }
+
+  @Test
   void purposeStateCanCarryReturnUrlFromConfiguredOrigin() {
     String returnUrl = HOSTED_FRONTEND + "/oauth/callback?returnTo=%2Fapp%2Fcalendar";
 

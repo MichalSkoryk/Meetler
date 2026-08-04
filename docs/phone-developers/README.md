@@ -183,28 +183,35 @@ POST /api/auth/password/reset/confirm
 
 ## Google And Microsoft Login
 
-Mobile apps should use the backend OAuth login endpoints with a `returnUrl`.
+Mobile apps should use the backend OAuth login endpoints with a validated `returnUrl` and `responseMode=mobile_code`.
 
 Example:
 
 ```text
-GET /api/auth/google/login?returnUrl=meetler://oauth/callback
-GET /api/auth/microsoft/login?returnUrl=meetler://oauth/callback
+GET /api/auth/google/login?returnUrl=https://meetler-frontend-dev.onrender.com/mobile/auth/callback&responseMode=mobile_code
+GET /api/auth/microsoft/login?returnUrl=https://meetler-frontend-dev.onrender.com/mobile/auth/callback&responseMode=mobile_code
 ```
 
 The backend redirects to the provider. After provider login, the backend redirects to:
 
 ```text
-meetler://oauth/callback?accessToken=...&refreshToken=...
+https://meetler-frontend-dev.onrender.com/mobile/auth/callback?code=<single-use-code>
 ```
 
-Supported `returnUrl` values:
+Exchange that two-minute code exactly once from the app:
 
-- Relative web paths, for example `/oauth/callback`.
-- Localhost HTTP URLs, for example `http://localhost:3000/oauth/callback`.
-- Mobile deep links with the `meetler://` scheme.
+```http
+POST /api/auth/mobile/exchange
+Content-Type: application/json
+```
 
-Do not use arbitrary production domains until backend allow-listing is added for them.
+```json
+{
+  "code": "single-use-code"
+}
+```
+
+The exchange response contains the normal access and refresh tokens. Tokens are never placed in the OAuth return URL. HTTPS return origins must be present in `OAUTH_ALLOWED_RETURN_ORIGINS`; `meetler://` is supported as a local-development fallback.
 
 ## Guest Login
 
@@ -216,7 +223,9 @@ POST /api/auth/guest/request-login
 
 ```json
 {
-  "email": "guest@example.com"
+  "email": "guest@example.com",
+  "name": "Guest",
+  "returnUrl": "https://meetler-frontend-dev.onrender.com/mobile/auth/guest"
 }
 ```
 
@@ -227,6 +236,35 @@ GET /api/auth/guest/login?token=<token>
 ```
 
 It returns the normal auth response with `accessToken` and `refreshToken`.
+
+Password-reset requests accept the same optional `returnUrl` field. Omitting it preserves the existing web email behavior.
+
+## Android Push Notifications
+
+Register the native FCM token after sign-in:
+
+```http
+POST /api/me/devices
+Authorization: Bearer <accessToken>
+Content-Type: application/json
+```
+
+```json
+{
+  "platform": "ANDROID",
+  "provider": "FCM",
+  "token": "native-fcm-token"
+}
+```
+
+Persist the returned device ID and revoke it during logout:
+
+```http
+DELETE /api/me/devices/{deviceId}
+Authorization: Bearer <accessToken>
+```
+
+Push data may contain `groupId` and `eventId`; route to the event when both exist, then to the group, and finally to the notification inbox.
 
 ## Availability Templates
 

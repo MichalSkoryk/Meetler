@@ -40,4 +40,12 @@ Google and Microsoft OAuth client IDs/secrets are not committed to the repositor
 
 For Google or Microsoft login/calendar integration access, contact the developer for the required `.env` values.
 
+Mobile social login uses a two-minute, single-use exchange code. Allow hosted mobile return links with:
+
+```text
+OAUTH_ALLOWED_RETURN_ORIGINS=https://meetler-frontend-dev.onrender.com
+```
+
+Firebase push delivery is opt-in. Set `FIREBASE_PUSH_ENABLED=true` and provide the service-account JSON as base64 in `FIREBASE_SERVICE_ACCOUNT_BASE64`. When Firebase is disabled, the logging sender remains active for local development.
+
 Enjoy!

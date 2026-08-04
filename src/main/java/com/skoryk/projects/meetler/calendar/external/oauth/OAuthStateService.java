@@ -52,6 +52,11 @@ public class OAuthStateService {
   }
 
   public String createState(String purpose, String provider, String returnUrl) {
+    return createState(purpose, provider, returnUrl, null);
+  }
+
+  public String createState(
+      String purpose, String provider, String returnUrl, String responseMode) {
     Date now = new Date();
     Date expiresAt = new Date(now.getTime() + STATE_TTL.toMillis());
     String normalizedReturnUrl = normalizeReturnUrl(returnUrl);
@@ -66,6 +71,9 @@ public class OAuthStateService {
 
     if (normalizedReturnUrl != null) {
       builder.claim("returnUrl", normalizedReturnUrl);
+    }
+    if (responseMode != null && !responseMode.isBlank()) {
+      builder.claim("responseMode", responseMode);
     }
 
     return builder.compact();
@@ -87,6 +95,11 @@ public class OAuthStateService {
 
   public String validatePurposeStateWithReturnUrl(
       String state, String expectedPurpose, String expectedProvider) {
+    return validatePurposeState(state, expectedPurpose, expectedProvider).returnUrl();
+  }
+
+  public OAuthPurposeState validatePurposeState(
+      String state, String expectedPurpose, String expectedProvider) {
     Claims claims =
         Jwts.parser().verifyWith(signingKey).build().parseSignedClaims(state).getPayload();
 
@@ -95,7 +108,13 @@ public class OAuthStateService {
       throw new IllegalArgumentException("Invalid OAuth state");
     }
 
-    return normalizeReturnUrl(claims.get("returnUrl", String.class));
+    return new OAuthPurposeState(
+        normalizeReturnUrl(claims.get("returnUrl", String.class)),
+        claims.get("responseMode", String.class));
+  }
+
+  public String validateReturnUrl(String returnUrl) {
+    return normalizeReturnUrl(returnUrl);
   }
 
   private String normalizeReturnUrl(String returnUrl) {
@@ -181,4 +200,6 @@ public class OAuthStateService {
   }
 
   public record OAuthUserState(UUID userId, String returnUrl) {}
+
+  public record OAuthPurposeState(String returnUrl, String responseMode) {}
 }

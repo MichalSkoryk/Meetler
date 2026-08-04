@@ -41,6 +41,16 @@ public class NotificationDelivery {
   @Column(name = "sent_at")
   private OffsetDateTime sentAt;
 
+  @Builder.Default
+  @Column(name = "attempt_count", nullable = false)
+  private int attemptCount = 0;
+
+  @Column(name = "last_attempt_at")
+  private OffsetDateTime lastAttemptAt;
+
+  @Column(name = "next_attempt_at")
+  private OffsetDateTime nextAttemptAt;
+
   @CreationTimestamp
   @Column(name = "created_at", nullable = false)
   private OffsetDateTime createdAt;

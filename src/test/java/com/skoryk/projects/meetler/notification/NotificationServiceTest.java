@@ -22,6 +22,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 @ExtendWith(MockitoExtension.class)
 class NotificationServiceTest {
@@ -29,7 +30,7 @@ class NotificationServiceTest {
   @Mock private NotificationRepository notificationRepository;
   @Mock private UserDeviceRepository userDeviceRepository;
   @Mock private NotificationDeliveryRepository deliveryRepository;
-  @Mock private PushNotificationSender pushNotificationSender;
+  @Mock private ApplicationEventPublisher eventPublisher;
 
   @InjectMocks private NotificationService notificationService;
 
@@ -50,8 +51,13 @@ class NotificationServiceTest {
             });
     when(userDeviceRepository.findByUserAndEnabledTrueAndRevokedAtIsNull(member))
         .thenReturn(List.of(device));
-    when(pushNotificationSender.send(any(UserDevice.class), any(Notification.class)))
-        .thenReturn(PushDeliveryResult.sent());
+    when(deliveryRepository.save(any(NotificationDelivery.class)))
+        .thenAnswer(
+            invocation -> {
+              NotificationDelivery delivery = invocation.getArgument(0);
+              delivery.setId(UUID.randomUUID());
+              return delivery;
+            });
 
     notificationService.notifyGroupEventCreated(
         event, List.of(participant(event, creator), participant(event, member)));
@@ -68,8 +74,9 @@ class NotificationServiceTest {
     ArgumentCaptor<NotificationDelivery> deliveryCaptor =
         ArgumentCaptor.forClass(NotificationDelivery.class);
     verify(deliveryRepository).save(deliveryCaptor.capture());
-    assertThat(deliveryCaptor.getValue().getStatus()).isEqualTo(NotificationDeliveryStatus.SENT);
-    assertThat(deliveryCaptor.getValue().getSentAt()).isNotNull();
+    assertThat(deliveryCaptor.getValue().getStatus()).isEqualTo(NotificationDeliveryStatus.PENDING);
+    assertThat(deliveryCaptor.getValue().getSentAt()).isNull();
+    verify(eventPublisher).publishEvent(any(NotificationDeliveryRequested.class));
   }
 
   @Test
