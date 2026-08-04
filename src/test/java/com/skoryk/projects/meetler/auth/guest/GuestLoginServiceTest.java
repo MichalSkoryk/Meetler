@@ -125,7 +125,7 @@ class GuestLoginServiceTest {
             .build();
     when(tokenRepository.findByTokenHash(anyString())).thenReturn(Optional.of(token));
     when(jwtService.generateToken(user.getId(), user.getEmail())).thenReturn("access");
-    when(refreshTokenService.rotateRefreshToken(user)).thenReturn("refresh");
+    when(refreshTokenService.createRefreshToken(user)).thenReturn("refresh");
 
     AuthResponse response = service.loginWithToken("raw-token");
 

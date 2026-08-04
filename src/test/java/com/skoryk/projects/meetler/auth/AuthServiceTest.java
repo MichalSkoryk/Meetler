@@ -104,6 +104,20 @@ class AuthServiceTest {
   }
 
   @Test
+  void refreshRotatesOnlyThePresentedSession() {
+    AppUser user = user();
+    when(refreshTokenService.rotateRefreshToken("current-refresh"))
+        .thenReturn(new RefreshTokenService.RefreshTokenRotation(user, "next-refresh"));
+    when(jwtService.generateToken(user.getId(), user.getEmail())).thenReturn("next-access");
+
+    AuthResponse response = service.refreshToken("current-refresh");
+
+    assertThat(response.getAccessToken()).isEqualTo("next-access");
+    assertThat(response.getRefreshToken()).isEqualTo("next-refresh");
+    verify(refreshTokenService).rotateRefreshToken("current-refresh");
+  }
+
+  @Test
   void authenticateGoogleLinksExistingUserByEmail() {
     AppUser user = user();
     when(identityRepository.findByProviderAndProviderUserId(AuthProvider.GOOGLE, "google-id"))
@@ -114,7 +128,7 @@ class AuthServiceTest {
         .thenReturn(Optional.empty());
     when(appUserService.convertGuestToUser(user)).thenReturn(user);
     when(jwtService.generateToken(user.getId(), user.getEmail())).thenReturn("access");
-    when(refreshTokenService.rotateRefreshToken(user)).thenReturn("refresh");
+    when(refreshTokenService.createRefreshToken(user)).thenReturn("refresh");
 
     AuthResponse response = service.authenticateGoogleUser("google-id", user.getEmail(), "Test");
 
@@ -139,7 +153,7 @@ class AuthServiceTest {
             guest, AuthProvider.GOOGLE, "google-id"))
         .thenReturn(Optional.empty());
     when(jwtService.generateToken(guest.getId(), guest.getEmail())).thenReturn("access");
-    when(refreshTokenService.rotateRefreshToken(guest)).thenReturn("refresh");
+    when(refreshTokenService.createRefreshToken(guest)).thenReturn("refresh");
 
     service.authenticateGoogleUser("google-id", guest.getEmail(), "Guest");
 

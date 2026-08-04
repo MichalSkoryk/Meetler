@@ -67,18 +67,20 @@ public class AuthService {
     }
 
     String accessToken = jwtService.generateToken(user.getId(), user.getEmail());
-    String refreshToken = refreshTokenService.rotateRefreshToken(user);
+    String refreshToken = refreshTokenService.createRefreshToken(user);
 
     return new AuthResponse(accessToken, refreshToken);
   }
 
+  @Transactional
   public AuthResponse refreshToken(String refreshToken) {
-    AppUser user = refreshTokenService.validateAndRotate(refreshToken);
+    RefreshTokenService.RefreshTokenRotation rotation =
+        refreshTokenService.rotateRefreshToken(refreshToken);
+    AppUser user = rotation.user();
 
     String newAccessToken = jwtService.generateToken(user.getId(), user.getEmail());
-    String newRefreshToken = refreshTokenService.rotateRefreshToken(user);
 
-    return new AuthResponse(newAccessToken, newRefreshToken);
+    return new AuthResponse(newAccessToken, rotation.token());
   }
 
   public void logout(String refreshToken) {
@@ -180,7 +182,7 @@ public class AuthService {
   public AuthResponse issueTokens(AppUser user) {
     ensureActive(user);
     String accessToken = jwtService.generateToken(user.getId(), user.getEmail());
-    String refreshToken = refreshTokenService.rotateRefreshToken(user);
+    String refreshToken = refreshTokenService.createRefreshToken(user);
 
     return new AuthResponse(accessToken, refreshToken);
   }
