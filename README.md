@@ -1,5 +1,10 @@
 # Meetler
 
+## About
+
+- [Swagger API documentation](https://meetler-api-dev.onrender.com/swagger-ui/index.html#/)
+- [Meetler frontend application](https://meetler-frontend-dev.onrender.com/auth)
+
 To use the application you have to:
 
 Run ```docker-compose up -d postgres``` command in the root directory.
