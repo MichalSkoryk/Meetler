@@ -31,24 +31,20 @@ public class RefreshTokenService {
   }
 
   @Transactional
-  public String rotateRefreshToken(AppUser user) {
-    // Remove all old tokens for this user
-    repo.deleteByUser(user);
-
-    // Create a new one
-    return createRefreshToken(user);
-  }
-
-  public AppUser validateAndRotate(String tokenValue) {
+  public RefreshTokenRotation rotateRefreshToken(String tokenValue) {
     RefreshToken token =
-        repo.findByToken(tokenValue)
+        repo.findByTokenForUpdate(tokenValue)
             .orElseThrow(() -> new IllegalArgumentException("Invalid refresh token"));
 
     if (token.isRevoked() || token.getExpiresAt().isBefore(OffsetDateTime.now())) {
       throw new IllegalArgumentException("Refresh token expired or revoked");
     }
 
-    return token.getUser();
+    String rotatedToken = UUID.randomUUID().toString();
+    token.setToken(rotatedToken);
+    token.setExpiresAt(OffsetDateTime.now().plusDays(refreshTokenTtlDays));
+    repo.save(token);
+    return new RefreshTokenRotation(token.getUser(), rotatedToken);
   }
 
   @Transactional
@@ -60,4 +56,6 @@ public class RefreshTokenService {
     token.setRevoked(true);
     repo.save(token);
   }
+
+  public record RefreshTokenRotation(AppUser user, String token) {}
 }

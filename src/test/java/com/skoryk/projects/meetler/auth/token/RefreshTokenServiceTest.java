@@ -3,6 +3,7 @@ package com.skoryk.projects.meetler.auth.token;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -26,15 +27,28 @@ class RefreshTokenServiceTest {
   @InjectMocks private RefreshTokenService service;
 
   @Test
-  void rotateDeletesOldTokensAndCreatesNewOne() {
+  void rotateUpdatesOnlyThePresentedSession() {
     AppUser user = user();
+    RefreshToken current =
+        RefreshToken.builder()
+            .token("current-token")
+            .user(user)
+            .expiresAt(OffsetDateTime.now().plusDays(1))
+            .revoked(false)
+            .build();
+    ReflectionTestUtils.setField(service, "refreshTokenTtlDays", 30L);
+    when(repo.findByTokenForUpdate("current-token")).thenReturn(Optional.of(current));
     when(repo.save(any(RefreshToken.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-    String token = service.rotateRefreshToken(user);
+    RefreshTokenService.RefreshTokenRotation rotation = service.rotateRefreshToken("current-token");
 
-    assertThat(token).isNotBlank();
-    verify(repo).deleteByUser(user);
-    verify(repo).save(any(RefreshToken.class));
+    assertThat(rotation.user()).isSameAs(user);
+    assertThat(rotation.token()).isNotBlank().isNotEqualTo("current-token");
+    assertThat(current.getToken()).isEqualTo(rotation.token());
+    assertThat(current.getExpiresAt())
+        .isBetween(OffsetDateTime.now().plusDays(29), OffsetDateTime.now().plusDays(31));
+    verify(repo).save(current);
+    verify(repo, never()).deleteByUser(any());
   }
 
   @Test
@@ -61,9 +75,9 @@ class RefreshTokenServiceTest {
             .expiresAt(OffsetDateTime.now().minusMinutes(1))
             .revoked(false)
             .build();
-    when(repo.findByToken("token")).thenReturn(Optional.of(token));
+    when(repo.findByTokenForUpdate("token")).thenReturn(Optional.of(token));
 
-    assertThatThrownBy(() -> service.validateAndRotate("token"))
+    assertThatThrownBy(() -> service.rotateRefreshToken("token"))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("Refresh token expired or revoked");
   }

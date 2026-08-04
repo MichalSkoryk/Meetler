@@ -16,9 +16,11 @@ import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mapstruct.factory.Mappers;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
@@ -27,6 +29,10 @@ class UserSubscriptionServiceTest {
   @Mock private UserSubscriptionRepository userSubscriptionRepository;
   @Mock private SubscriptionPlanRepository subscriptionPlanRepository;
   @Mock private AppUserRepository userRepository;
+
+  @Spy
+  private UserSubscriptionMapper userSubscriptionMapper =
+      Mappers.getMapper(UserSubscriptionMapper.class);
 
   @InjectMocks private UserSubscriptionService service;
 

@@ -18,6 +18,7 @@ public class UserSubscriptionService {
   private final UserSubscriptionRepository userSubscriptionRepository;
   private final SubscriptionPlanRepository subscriptionPlanRepository;
   private final AppUserRepository userRepository;
+  private final UserSubscriptionMapper userSubscriptionMapper;
 
   public UserSubscriptionResponse getActiveSubscription(UUID userId, AppUser requester) {
     assertApplicationAdmin(requester);
@@ -27,7 +28,7 @@ public class UserSubscriptionService {
             .findFirstByUserAndStatusOrderByStartedAtDesc(user, SubscriptionStatus.ACTIVE)
             .orElseThrow(() -> new IllegalArgumentException("User has no active subscription"));
 
-    return toResponse(subscription);
+    return userSubscriptionMapper.toResponse(subscription);
   }
 
   @Transactional
@@ -64,7 +65,7 @@ public class UserSubscriptionService {
             .startedAt(now)
             .build();
 
-    return toResponse(userSubscriptionRepository.save(subscription));
+    return userSubscriptionMapper.toResponse(userSubscriptionRepository.save(subscription));
   }
 
   private AppUser getUser(UUID userId) {
@@ -77,19 +78,5 @@ public class UserSubscriptionService {
     if (requester == null || requester.getRole() != AppUserRole.ADMIN) {
       throw new IllegalArgumentException("Only application admins can manage subscriptions");
     }
-  }
-
-  private UserSubscriptionResponse toResponse(UserSubscription subscription) {
-    SubscriptionPlan plan = subscription.getPlan();
-    return UserSubscriptionResponse.builder()
-        .id(subscription.getId())
-        .userId(subscription.getUser().getId())
-        .planId(plan.getId())
-        .planCode(plan.getCode())
-        .planName(plan.getName())
-        .status(subscription.getStatus())
-        .startedAt(subscription.getStartedAt())
-        .expiresAt(subscription.getExpiresAt())
-        .build();
   }
 }

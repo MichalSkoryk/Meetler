@@ -90,7 +90,7 @@ public class GuestLoginService {
     tokenRepository.save(token);
 
     String accessToken = jwtService.generateToken(user.getId(), user.getEmail());
-    String refreshToken = refreshTokenService.rotateRefreshToken(user);
+    String refreshToken = refreshTokenService.createRefreshToken(user);
     return new AuthResponse(accessToken, refreshToken);
   }
 
