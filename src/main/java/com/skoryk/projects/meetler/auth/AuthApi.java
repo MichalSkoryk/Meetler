@@ -4,6 +4,7 @@ import com.skoryk.projects.meetler.auth.dto.AuthResponse;
 import com.skoryk.projects.meetler.auth.dto.GuestLoginRequest;
 import com.skoryk.projects.meetler.auth.dto.GuestLoginResponse;
 import com.skoryk.projects.meetler.auth.dto.LoginRequest;
+import com.skoryk.projects.meetler.auth.dto.MobileAuthExchangeRequest;
 import com.skoryk.projects.meetler.auth.dto.PasswordResetConfirmRequest;
 import com.skoryk.projects.meetler.auth.dto.PasswordResetRequest;
 import com.skoryk.projects.meetler.auth.dto.PasswordResetResponse;
@@ -78,6 +79,14 @@ public interface AuthApi {
       @Valid @RequestBody PasswordResetConfirmRequest request);
 
   @Operation(
+      summary = "Exchange a mobile OAuth code",
+      description =
+          "Consumes a two-minute, single-use code returned by a mobile OAuth callback and returns access and refresh tokens.")
+  @PostMapping("/mobile/exchange")
+  ResponseEntity<AuthResponse> exchangeMobileCode(
+      @Valid @RequestBody MobileAuthExchangeRequest request);
+
+  @Operation(
       summary = "Open password reset page",
       description =
           "Browser landing endpoint for emailed reset links. Redirects to the configured frontend reset page with the token.")
@@ -88,7 +97,9 @@ public interface AuthApi {
       summary = "Start Google login",
       description = "Redirects the browser to Google's OAuth consent screen for application login.")
   @GetMapping("/google/login")
-  ResponseEntity<Void> googleLogin(@RequestParam(required = false) String returnUrl);
+  ResponseEntity<Void> googleLogin(
+      @RequestParam(required = false) String returnUrl,
+      @RequestParam(required = false) String responseMode);
 
   @Operation(
       summary = "Handle Google login callback",
@@ -106,7 +117,9 @@ public interface AuthApi {
       description =
           "Redirects the browser to Microsoft's OAuth consent screen for application login.")
   @GetMapping("/microsoft/login")
-  ResponseEntity<Void> microsoftLogin(@RequestParam(required = false) String returnUrl);
+  ResponseEntity<Void> microsoftLogin(
+      @RequestParam(required = false) String returnUrl,
+      @RequestParam(required = false) String responseMode);
 
   @Operation(
       summary = "Handle Microsoft login callback",

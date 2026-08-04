@@ -4,6 +4,7 @@ import com.skoryk.projects.meetler.auth.dto.AuthResponse;
 import com.skoryk.projects.meetler.auth.dto.GuestLoginRequest;
 import com.skoryk.projects.meetler.auth.dto.GuestLoginResponse;
 import com.skoryk.projects.meetler.auth.dto.LoginRequest;
+import com.skoryk.projects.meetler.auth.dto.MobileAuthExchangeRequest;
 import com.skoryk.projects.meetler.auth.dto.PasswordResetConfirmRequest;
 import com.skoryk.projects.meetler.auth.dto.PasswordResetRequest;
 import com.skoryk.projects.meetler.auth.dto.PasswordResetResponse;
@@ -12,6 +13,7 @@ import com.skoryk.projects.meetler.auth.dto.RegisterRequest;
 import com.skoryk.projects.meetler.auth.google.GoogleAuthService;
 import com.skoryk.projects.meetler.auth.guest.GuestLoginService;
 import com.skoryk.projects.meetler.auth.microsoft.MicrosoftAuthService;
+import com.skoryk.projects.meetler.auth.mobile.MobileAuthExchangeService;
 import com.skoryk.projects.meetler.auth.password.PasswordResetService;
 import java.net.URI;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +31,7 @@ public class AuthController implements AuthApi {
   private final PasswordResetService passwordResetService;
   private final GoogleAuthService googleAuthService;
   private final MicrosoftAuthService microsoftAuthService;
+  private final MobileAuthExchangeService mobileAuthExchangeService;
 
   @Value("${auth.password-reset.frontend-url:http://localhost:8081}")
   private String passwordResetFrontendUrl;
@@ -79,6 +82,11 @@ public class AuthController implements AuthApi {
   }
 
   @Override
+  public ResponseEntity<AuthResponse> exchangeMobileCode(MobileAuthExchangeRequest request) {
+    return ResponseEntity.ok(mobileAuthExchangeService.exchange(request.getCode()));
+  }
+
+  @Override
   public ResponseEntity<Void> openPasswordResetPage(String token) {
     URI redirectUri =
         UriComponentsBuilder.fromUriString(passwordResetFrontendUrl)
@@ -90,8 +98,8 @@ public class AuthController implements AuthApi {
   }
 
   @Override
-  public ResponseEntity<Void> googleLogin(String returnUrl) {
-    URI authorizationUri = googleAuthService.buildAuthorizationUri(returnUrl);
+  public ResponseEntity<Void> googleLogin(String returnUrl, String responseMode) {
+    URI authorizationUri = googleAuthService.buildAuthorizationUri(returnUrl, responseMode);
     return ResponseEntity.status(302).location(authorizationUri).build();
   }
 
@@ -110,8 +118,8 @@ public class AuthController implements AuthApi {
   }
 
   @Override
-  public ResponseEntity<Void> microsoftLogin(String returnUrl) {
-    URI authorizationUri = microsoftAuthService.buildAuthorizationUri(returnUrl);
+  public ResponseEntity<Void> microsoftLogin(String returnUrl, String responseMode) {
+    URI authorizationUri = microsoftAuthService.buildAuthorizationUri(returnUrl, responseMode);
     return ResponseEntity.status(302).location(authorizationUri).build();
   }
 
@@ -130,14 +138,28 @@ public class AuthController implements AuthApi {
   }
 
   private ResponseEntity<?> oauthLoginResponse(OAuthLoginResult result) {
+    if (result.responseMode() == OAuthResponseMode.MOBILE_CODE) {
+      if (result.returnUrl() == null) {
+        throw new IllegalArgumentException("Mobile OAuth callback is missing a return URL");
+      }
+      String exchangeCode = mobileAuthExchangeService.createCode(result.user());
+      URI redirectUri =
+          UriComponentsBuilder.fromUriString(result.returnUrl())
+              .queryParam("code", exchangeCode)
+              .build()
+              .toUri();
+      return ResponseEntity.status(302).location(redirectUri).build();
+    }
+
+    AuthResponse authResponse = authService.issueTokens(result.user());
     if (result.returnUrl() == null) {
-      return ResponseEntity.ok(result.authResponse());
+      return ResponseEntity.ok(authResponse);
     }
 
     URI redirectUri =
         org.springframework.web.util.UriComponentsBuilder.fromUriString(result.returnUrl())
-            .queryParam("accessToken", result.authResponse().getAccessToken())
-            .queryParam("refreshToken", result.authResponse().getRefreshToken())
+            .queryParam("accessToken", authResponse.getAccessToken())
+            .queryParam("refreshToken", authResponse.getRefreshToken())
             .build()
             .toUri();
     return ResponseEntity.status(302).location(redirectUri).build();

@@ -12,6 +12,7 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -24,7 +25,7 @@ public class NotificationService {
   private final NotificationRepository notificationRepository;
   private final UserDeviceRepository userDeviceRepository;
   private final NotificationDeliveryRepository deliveryRepository;
-  private final PushNotificationSender pushNotificationSender;
+  private final ApplicationEventPublisher eventPublisher;
 
   @Transactional(readOnly = true)
   public Page<NotificationResponse> listNotifications(
@@ -154,13 +155,8 @@ public class NotificationService {
               .status(NotificationDeliveryStatus.PENDING)
               .build();
 
-      PushDeliveryResult result = pushNotificationSender.send(device, notification);
-      delivery.setStatus(result.status());
-      delivery.setLastError(result.error());
-      if (result.status() == NotificationDeliveryStatus.SENT) {
-        delivery.setSentAt(OffsetDateTime.now());
-      }
-      deliveryRepository.save(delivery);
+      NotificationDelivery savedDelivery = deliveryRepository.save(delivery);
+      eventPublisher.publishEvent(new NotificationDeliveryRequested(savedDelivery.getId()));
     }
   }
 

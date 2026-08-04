@@ -15,6 +15,7 @@ import com.skoryk.projects.meetler.auth.identity.UserAuthIdentity;
 import com.skoryk.projects.meetler.auth.identity.UserAuthIdentityRepository;
 import com.skoryk.projects.meetler.auth.jwt.JwtService;
 import com.skoryk.projects.meetler.auth.token.RefreshTokenService;
+import com.skoryk.projects.meetler.calendar.external.oauth.OAuthStateService;
 import com.skoryk.projects.meetler.email.EmailService;
 import com.skoryk.projects.meetler.user.AppUser;
 import com.skoryk.projects.meetler.user.AppUserRepository;
@@ -40,6 +41,7 @@ class GuestLoginServiceTest {
   @Mock private JwtService jwtService;
   @Mock private RefreshTokenService refreshTokenService;
   @Mock private EmailService emailService;
+  @Mock private OAuthStateService returnUrlValidator;
 
   @InjectMocks private GuestLoginService service;
 
@@ -92,6 +94,25 @@ class GuestLoginServiceTest {
         .hasMessage("Email is already registered");
 
     verify(tokenRepository, never()).save(any());
+  }
+
+  @Test
+  void requestLoginLinkUsesValidatedMobileReturnUrl() {
+    GuestLoginRequest request = request();
+    request.setReturnUrl("https://meetler.example/mobile/auth/guest");
+    when(returnUrlValidator.validateReturnUrl(request.getReturnUrl()))
+        .thenReturn(request.getReturnUrl());
+    when(userRepository.findByEmail("guest@example.com")).thenReturn(Optional.empty());
+    when(userRepository.save(any(AppUser.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+    when(tokenRepository.save(any(GuestLoginToken.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+
+    GuestLoginResponse response = service.requestLoginLink(request);
+
+    assertThat(response.getLoginLink())
+        .startsWith("https://meetler.example/mobile/auth/guest?token=");
+    verify(returnUrlValidator).validateReturnUrl(request.getReturnUrl());
   }
 
   @Test

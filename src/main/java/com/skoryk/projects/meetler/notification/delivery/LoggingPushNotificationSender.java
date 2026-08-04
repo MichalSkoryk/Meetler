@@ -3,9 +3,15 @@ package com.skoryk.projects.meetler.notification.delivery;
 import com.skoryk.projects.meetler.notification.Notification;
 import com.skoryk.projects.meetler.notification.device.UserDevice;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 @Component
+@ConditionalOnProperty(
+    prefix = "notification.firebase",
+    name = "enabled",
+    havingValue = "false",
+    matchIfMissing = true)
 @Slf4j
 public class LoggingPushNotificationSender implements PushNotificationSender {
 

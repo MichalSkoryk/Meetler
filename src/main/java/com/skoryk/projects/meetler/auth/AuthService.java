@@ -87,15 +87,26 @@ public class AuthService {
 
   @Transactional
   public AuthResponse authenticateGoogleUser(String providerUserId, String email, String name) {
-    return authenticateExternalUser(providerUserId, email, name, AuthProvider.GOOGLE);
+    return issueTokens(authenticateExternalUser(providerUserId, email, name, AuthProvider.GOOGLE));
   }
 
   @Transactional
   public AuthResponse authenticateMicrosoftUser(String providerUserId, String email, String name) {
+    return issueTokens(
+        authenticateExternalUser(providerUserId, email, name, AuthProvider.MICROSOFT));
+  }
+
+  @Transactional
+  public AppUser authenticateGoogleIdentity(String providerUserId, String email, String name) {
+    return authenticateExternalUser(providerUserId, email, name, AuthProvider.GOOGLE);
+  }
+
+  @Transactional
+  public AppUser authenticateMicrosoftIdentity(String providerUserId, String email, String name) {
     return authenticateExternalUser(providerUserId, email, name, AuthProvider.MICROSOFT);
   }
 
-  private AuthResponse authenticateExternalUser(
+  private AppUser authenticateExternalUser(
       String providerUserId, String email, String name, AuthProvider authProvider) {
     if (providerUserId == null || providerUserId.isBlank()) {
       throw new IllegalArgumentException(authProvider + " user id was not returned");
@@ -118,7 +129,7 @@ public class AuthService {
 
     if (userFromIdentity != null) {
       ensureActive(userFromIdentity);
-      return issueTokens(appUserService.convertGuestToUser(userFromIdentity));
+      return appUserService.convertGuestToUser(userFromIdentity);
     }
 
     AppUser user =
@@ -140,7 +151,7 @@ public class AuthService {
                             .build()));
 
     createIdentity(user, authProvider, providerUserId, normalizedEmail);
-    return issueTokens(user);
+    return user;
   }
 
   private UserAuthIdentity createIdentity(
@@ -165,7 +176,9 @@ public class AuthService {
     }
   }
 
-  private AuthResponse issueTokens(AppUser user) {
+  @Transactional
+  public AuthResponse issueTokens(AppUser user) {
+    ensureActive(user);
     String accessToken = jwtService.generateToken(user.getId(), user.getEmail());
     String refreshToken = refreshTokenService.rotateRefreshToken(user);
 

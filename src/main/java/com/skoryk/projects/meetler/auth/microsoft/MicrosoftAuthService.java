@@ -2,7 +2,7 @@ package com.skoryk.projects.meetler.auth.microsoft;
 
 import com.skoryk.projects.meetler.auth.AuthService;
 import com.skoryk.projects.meetler.auth.OAuthLoginResult;
-import com.skoryk.projects.meetler.auth.dto.AuthResponse;
+import com.skoryk.projects.meetler.auth.OAuthResponseMode;
 import com.skoryk.projects.meetler.calendar.external.oauth.OAuthStateService;
 import java.net.URI;
 import lombok.RequiredArgsConstructor;
@@ -27,9 +27,17 @@ public class MicrosoftAuthService {
   private final RestClient restClient = RestClient.create();
 
   public URI buildAuthorizationUri(String returnUrl) {
-    requireConfigured();
+    return buildAuthorizationUri(returnUrl, null);
+  }
 
-    String state = stateService.createState(PURPOSE, PROVIDER, returnUrl);
+  public URI buildAuthorizationUri(String returnUrl, String responseMode) {
+    requireConfigured();
+    OAuthResponseMode mode = OAuthResponseMode.from(responseMode);
+    if (mode == OAuthResponseMode.MOBILE_CODE && (returnUrl == null || returnUrl.isBlank())) {
+      throw new IllegalArgumentException("Mobile OAuth requires a return URL");
+    }
+
+    String state = stateService.createState(PURPOSE, PROVIDER, returnUrl, mode.value());
 
     return UriComponentsBuilder.fromUriString(properties.getAuthorizationUri())
         .queryParam("client_id", properties.getClientId())
@@ -45,7 +53,8 @@ public class MicrosoftAuthService {
 
   public OAuthLoginResult handleCallbackWithRedirect(String code, String state) {
     requireConfigured();
-    String returnUrl = stateService.validatePurposeStateWithReturnUrl(state, PURPOSE, PROVIDER);
+    OAuthStateService.OAuthPurposeState oauthState =
+        stateService.validatePurposeState(state, PURPOSE, PROVIDER);
 
     MicrosoftTokenResponse tokenResponse = exchangeCodeForTokens(code);
     MicrosoftUserInfoResponse userInfo = fetchUserInfo(tokenResponse.getAccessToken());
@@ -59,9 +68,10 @@ public class MicrosoftAuthService {
       throw new IllegalArgumentException("Microsoft user id was not returned");
     }
 
-    AuthResponse authResponse =
-        authService.authenticateMicrosoftUser(userInfo.getSub(), email, userInfo.getName());
-    return new OAuthLoginResult(authResponse, returnUrl);
+    var user =
+        authService.authenticateMicrosoftIdentity(userInfo.getSub(), email, userInfo.getName());
+    return new OAuthLoginResult(
+        user, oauthState.returnUrl(), OAuthResponseMode.from(oauthState.responseMode()));
   }
 
   private MicrosoftTokenResponse exchangeCodeForTokens(String code) {
