@@ -39,6 +39,7 @@ public class AvailabilityTemplateService {
   private final CalendarRepository calendarRepository;
   private final AvailabilityTemplateResolver resolver;
   private final SubscriptionLimitService subscriptionLimitService;
+  private final AvailabilityTemplateMapper availabilityTemplateMapper;
 
   @Transactional
   public AvailabilityTemplateResponse createTemplate(
@@ -62,17 +63,17 @@ public class AvailabilityTemplateService {
                 defaultAvailabilityStatusOrFallback(request.getDefaultAvailabilityStatus()))
             .build();
 
-    return toTemplateResponse(templateRepository.save(template));
+    return availabilityTemplateMapper.toTemplateResponse(templateRepository.save(template));
   }
 
   public Page<AvailabilityTemplateResponse> getUserTemplates(AppUser user, int page) {
     return templateRepository
         .findByUserOrderByCreatedAtDesc(user, availabilityPage(page))
-        .map(this::toTemplateResponse);
+        .map(availabilityTemplateMapper::toTemplateResponse);
   }
 
   public AvailabilityTemplateResponse getTemplate(UUID templateId, AppUser user) {
-    return toTemplateResponse(getOwnedTemplate(templateId, user));
+    return availabilityTemplateMapper.toTemplateResponse(getOwnedTemplate(templateId, user));
   }
 
   @Transactional
@@ -93,7 +94,7 @@ public class AvailabilityTemplateService {
     template.setDefaultAvailabilityStatus(
         defaultAvailabilityStatusOrFallback(request.getDefaultAvailabilityStatus()));
 
-    return toTemplateResponse(templateRepository.save(template));
+    return availabilityTemplateMapper.toTemplateResponse(templateRepository.save(template));
   }
 
   @Transactional
@@ -120,7 +121,7 @@ public class AvailabilityTemplateService {
             .note(request.getNote())
             .build();
 
-    return toBlockResponse(blockRepository.save(block));
+    return availabilityTemplateMapper.toBlockResponse(blockRepository.save(block));
   }
 
   public Page<AvailabilityBlockResponse> getBlocks(
@@ -132,22 +133,22 @@ public class AvailabilityTemplateService {
     if (from == null && to == null) {
       return blockRepository
           .findByTemplateOrderByStartsAtAsc(template, pageable)
-          .map(this::toBlockResponse);
+          .map(availabilityTemplateMapper::toBlockResponse);
     }
     if (from == null) {
       return blockRepository
           .findByTemplateStartingBefore(template, to, pageable)
-          .map(this::toBlockResponse);
+          .map(availabilityTemplateMapper::toBlockResponse);
     }
     if (to == null) {
       return blockRepository
           .findByTemplateEndingAfter(template, from, pageable)
-          .map(this::toBlockResponse);
+          .map(availabilityTemplateMapper::toBlockResponse);
     }
 
     return blockRepository
         .findByTemplateOverlappingRange(template, from, to, pageable)
-        .map(this::toBlockResponse);
+        .map(availabilityTemplateMapper::toBlockResponse);
   }
 
   @Transactional
@@ -166,7 +167,7 @@ public class AvailabilityTemplateService {
     block.setStatus(request.getStatus());
     block.setNote(request.getNote());
 
-    return toBlockResponse(blockRepository.save(block));
+    return availabilityTemplateMapper.toBlockResponse(blockRepository.save(block));
   }
 
   @Transactional
@@ -191,7 +192,8 @@ public class AvailabilityTemplateService {
         AvailabilityTemplateRecurringBlock.builder().template(template).build();
     applyRecurringRequest(block, request);
 
-    return toRecurringBlockResponse(recurringBlockRepository.save(block));
+    return availabilityTemplateMapper.toRecurringBlockResponse(
+        recurringBlockRepository.save(block));
   }
 
   @Transactional
@@ -208,7 +210,8 @@ public class AvailabilityTemplateService {
                 () -> new IllegalArgumentException("Recurring availability block not found"));
     applyRecurringRequest(block, request);
 
-    return toRecurringBlockResponse(recurringBlockRepository.save(block));
+    return availabilityTemplateMapper.toRecurringBlockResponse(
+        recurringBlockRepository.save(block));
   }
 
   @Transactional
@@ -238,7 +241,7 @@ public class AvailabilityTemplateService {
       blockRepository.delete(originalBlock);
     }
 
-    return toRecurringBlockResponse(savedBlock);
+    return availabilityTemplateMapper.toRecurringBlockResponse(savedBlock);
   }
 
   public Page<RecurringAvailabilityBlockResponse> getRecurringBlocks(
@@ -250,22 +253,22 @@ public class AvailabilityTemplateService {
     if (from == null && to == null) {
       return recurringBlockRepository
           .findByTemplateOrdered(template, pageable)
-          .map(this::toRecurringBlockResponse);
+          .map(availabilityTemplateMapper::toRecurringBlockResponse);
     }
     if (from == null) {
       return recurringBlockRepository
           .findByTemplateStartingOnOrBefore(template, to, pageable)
-          .map(this::toRecurringBlockResponse);
+          .map(availabilityTemplateMapper::toRecurringBlockResponse);
     }
     if (to == null) {
       return recurringBlockRepository
           .findByTemplateEndingOnOrAfter(template, from, pageable)
-          .map(this::toRecurringBlockResponse);
+          .map(availabilityTemplateMapper::toRecurringBlockResponse);
     }
 
     return recurringBlockRepository
         .findByTemplateActiveInDateRange(template, from, to, pageable)
-        .map(this::toRecurringBlockResponse);
+        .map(availabilityTemplateMapper::toRecurringBlockResponse);
   }
 
   public List<ResolvedAvailabilityWindowResponse> resolveTemplateAvailability(
@@ -314,13 +317,14 @@ public class AvailabilityTemplateService {
 
     source.setIncludeBusyEvents(request.isIncludeBusyEvents());
 
-    return toSourceCalendarResponse(sourceCalendarRepository.save(source));
+    return availabilityTemplateMapper.toSourceCalendarResponse(
+        sourceCalendarRepository.save(source));
   }
 
   public List<SourceCalendarResponse> getSourceCalendars(UUID templateId, AppUser user) {
     AvailabilityTemplate template = getOwnedTemplate(templateId, user);
     return sourceCalendarRepository.findByTemplate(template).stream()
-        .map(this::toSourceCalendarResponse)
+        .map(availabilityTemplateMapper::toSourceCalendarResponse)
         .toList();
   }
 
@@ -532,64 +536,5 @@ public class AvailabilityTemplateService {
     } catch (DateTimeException ex) {
       throw new IllegalArgumentException("Yearly recurrence date is invalid");
     }
-  }
-
-  private AvailabilityTemplateResponse toTemplateResponse(AvailabilityTemplate template) {
-    return AvailabilityTemplateResponse.builder()
-        .id(template.getId())
-        .name(template.getName())
-        .isDefault(template.isDefault())
-        .timezone(template.getTimezone())
-        .defaultAvailabilityStatus(template.getDefaultAvailabilityStatus())
-        .createdAt(template.getCreatedAt())
-        .updatedAt(template.getUpdatedAt())
-        .build();
-  }
-
-  private AvailabilityBlockResponse toBlockResponse(AvailabilityTemplateBlock block) {
-    return AvailabilityBlockResponse.builder()
-        .id(block.getId())
-        .startsAt(block.getStartsAt())
-        .endsAt(block.getEndsAt())
-        .status(block.getStatus())
-        .source(block.getSource())
-        .note(block.getNote())
-        .createdAt(block.getCreatedAt())
-        .updatedAt(block.getUpdatedAt())
-        .build();
-  }
-
-  private RecurringAvailabilityBlockResponse toRecurringBlockResponse(
-      AvailabilityTemplateRecurringBlock block) {
-    return RecurringAvailabilityBlockResponse.builder()
-        .id(block.getId())
-        .frequency(block.getFrequency())
-        .intervalCount(block.getIntervalCount())
-        .occurrenceCount(block.getOccurrenceCount())
-        .dayOfWeek(block.getDayOfWeek())
-        .dayOfMonth(block.getDayOfMonth())
-        .monthOfYear(block.getMonthOfYear())
-        .startTime(block.getStartTime())
-        .endTime(block.getEndTime())
-        .status(block.getStatus())
-        .note(block.getNote())
-        .startsOn(block.getStartsOn())
-        .endsOn(block.getEndsOn())
-        .createdAt(block.getCreatedAt())
-        .updatedAt(block.getUpdatedAt())
-        .build();
-  }
-
-  private SourceCalendarResponse toSourceCalendarResponse(
-      AvailabilityTemplateSourceCalendar source) {
-    Calendar calendar = source.getCalendar();
-    return SourceCalendarResponse.builder()
-        .id(source.getId())
-        .calendarId(calendar.getId())
-        .calendarName(calendar.getName())
-        .provider(calendar.getProvider())
-        .includeBusyEvents(source.isIncludeBusyEvents())
-        .createdAt(source.getCreatedAt())
-        .build();
   }
 }

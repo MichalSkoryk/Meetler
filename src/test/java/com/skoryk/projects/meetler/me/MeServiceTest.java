@@ -19,8 +19,10 @@ import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mapstruct.factory.Mappers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
@@ -30,6 +32,7 @@ class MeServiceTest {
   @Mock private BillingSynchronizationService billingSynchronizationService;
   @Mock private ExternalCalendarAccountRepository externalCalendarAccountRepository;
   @Mock private UserAuthIdentityRepository userAuthIdentityRepository;
+  @Spy private MeMapper meMapper = Mappers.getMapper(MeMapper.class);
 
   @InjectMocks private MeService service;
 

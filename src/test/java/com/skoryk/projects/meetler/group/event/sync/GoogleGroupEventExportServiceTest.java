@@ -20,8 +20,10 @@ import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mapstruct.factory.Mappers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
@@ -31,6 +33,10 @@ class GoogleGroupEventExportServiceTest {
   @Mock private GroupEventRepository groupEventRepository;
   @Mock private GroupPermissionService groupPermissionService;
   @Mock private ExternalCalendarAccountRepository externalCalendarAccountRepository;
+
+  @Spy
+  private GroupEventExternalSyncMapper syncMapper =
+      Mappers.getMapper(GroupEventExternalSyncMapper.class);
 
   @InjectMocks private GoogleGroupEventExportService service;
 

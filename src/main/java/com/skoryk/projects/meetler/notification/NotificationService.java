@@ -26,6 +26,7 @@ public class NotificationService {
   private final UserDeviceRepository userDeviceRepository;
   private final NotificationDeliveryRepository deliveryRepository;
   private final ApplicationEventPublisher eventPublisher;
+  private final NotificationMapper notificationMapper;
 
   @Transactional(readOnly = true)
   public Page<NotificationResponse> listNotifications(
@@ -34,7 +35,7 @@ public class NotificationService {
         unreadOnly
             ? notificationRepository.findByUserAndReadAtIsNullOrderByCreatedAtDesc(user, pageable)
             : notificationRepository.findByUserOrderByCreatedAtDesc(user, pageable);
-    return notifications.map(this::toResponse);
+    return notifications.map(notificationMapper::toResponse);
   }
 
   @Transactional
@@ -50,7 +51,7 @@ public class NotificationService {
       notification.setReadAt(OffsetDateTime.now());
       notificationRepository.save(notification);
     }
-    return toResponse(notification);
+    return notificationMapper.toResponse(notification);
   }
 
   @Transactional
@@ -158,19 +159,5 @@ public class NotificationService {
       NotificationDelivery savedDelivery = deliveryRepository.save(delivery);
       eventPublisher.publishEvent(new NotificationDeliveryRequested(savedDelivery.getId()));
     }
-  }
-
-  private NotificationResponse toResponse(Notification notification) {
-    return NotificationResponse.builder()
-        .id(notification.getId())
-        .type(notification.getType())
-        .title(notification.getTitle())
-        .body(notification.getBody())
-        .groupId(notification.getGroupId())
-        .eventId(notification.getEventId())
-        .read(notification.getReadAt() != null)
-        .readAt(notification.getReadAt())
-        .createdAt(notification.getCreatedAt())
-        .build();
   }
 }

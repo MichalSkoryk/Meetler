@@ -21,6 +21,7 @@ public class GroupMemberService {
   private final GroupRepository groupRepository;
   private final GroupMemberRepository memberRepository;
   private final AvailabilityTemplateRepository availabilityTemplateRepository;
+  private final GroupMemberMapper groupMemberMapper;
 
   public GroupMember addMember(UUID groupId, AppUser user, GroupRole role) {
     Group group =
@@ -74,7 +75,9 @@ public class GroupMemberService {
             .findById(groupId)
             .orElseThrow(() -> new IllegalArgumentException("Group not found"));
 
-    return memberRepository.findByGroup(group).stream().map(this::toMemberResponse).toList();
+    return memberRepository.findByGroup(group).stream()
+        .map(groupMemberMapper::toMemberResponse)
+        .toList();
   }
 
   @Transactional
@@ -87,49 +90,23 @@ public class GroupMemberService {
             .orElseThrow(() -> new IllegalArgumentException("Availability template not found"));
 
     member.setAvailabilityTemplate(template);
-    return toAvailabilityTemplateResponse(memberRepository.save(member));
+    return groupMemberMapper.toAvailabilityTemplateResponse(memberRepository.save(member));
   }
 
   @Transactional
   public GroupAvailabilityTemplateResponse clearAvailabilityTemplate(UUID groupId, AppUser user) {
     GroupMember member = getCurrentMember(groupId, user);
     member.setAvailabilityTemplate(null);
-    return toAvailabilityTemplateResponse(memberRepository.save(member));
+    return groupMemberMapper.toAvailabilityTemplateResponse(memberRepository.save(member));
   }
 
   public GroupAvailabilityTemplateResponse getAvailabilityTemplate(UUID groupId, AppUser user) {
-    return toAvailabilityTemplateResponse(getCurrentMember(groupId, user));
+    return groupMemberMapper.toAvailabilityTemplateResponse(getCurrentMember(groupId, user));
   }
 
   private GroupMember getCurrentMember(UUID groupId, AppUser user) {
     return memberRepository
         .findByGroupIdAndUserId(groupId, user.getId())
         .orElseThrow(() -> new IllegalArgumentException("User not in group"));
-  }
-
-  private GroupAvailabilityTemplateResponse toAvailabilityTemplateResponse(GroupMember member) {
-    AvailabilityTemplate template = member.getAvailabilityTemplate();
-    return GroupAvailabilityTemplateResponse.builder()
-        .groupId(member.getGroup().getId())
-        .userId(member.getUser().getId())
-        .availabilityTemplateId(template == null ? null : template.getId())
-        .availabilityTemplateName(template == null ? null : template.getName())
-        .timezone(template == null ? null : template.getTimezone())
-        .build();
-  }
-
-  private GroupMemberResponse toMemberResponse(GroupMember member) {
-    AppUser user = member.getUser();
-    AvailabilityTemplate template = member.getAvailabilityTemplate();
-    return GroupMemberResponse.builder()
-        .id(member.getId())
-        .userId(user.getId())
-        .userName(user.getName())
-        .userEmail(user.getEmail())
-        .role(member.getRole().name())
-        .joinedAt(member.getJoinedAt())
-        .availabilityTemplateId(template == null ? null : template.getId())
-        .availabilityTemplateName(template == null ? null : template.getName())
-        .build();
   }
 }

@@ -20,9 +20,11 @@ import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mapstruct.factory.Mappers;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
@@ -31,6 +33,7 @@ class GroupMemberServiceTest {
   @Mock private GroupRepository groupRepository;
   @Mock private GroupMemberRepository memberRepository;
   @Mock private AvailabilityTemplateRepository availabilityTemplateRepository;
+  @Spy private GroupMemberMapper groupMemberMapper = Mappers.getMapper(GroupMemberMapper.class);
 
   @InjectMocks private GroupMemberService service;
 

@@ -21,6 +21,7 @@ public class ExternalCalendarAccountService {
 
   private final ExternalCalendarAccountRepository accountRepository;
   private final TokenEncryptionService tokenEncryptionService;
+  private final ExternalCalendarAccountMapper externalCalendarAccountMapper;
 
   @Transactional
   public ExternalCalendarAccountResponse storeOrUpdateAccount(
@@ -52,12 +53,12 @@ public class ExternalCalendarAccountService {
       account.setRefreshTokenEncrypted(tokenEncryptionService.encrypt(request.getRefreshToken()));
     }
 
-    return ExternalCalendarAccountResponse.from(accountRepository.save(account));
+    return externalCalendarAccountMapper.toResponse(accountRepository.save(account));
   }
 
   public List<ExternalCalendarAccountResponse> listActiveAccounts(AppUser user) {
     return accountRepository.findByUserAndRevokedAtIsNull(user).stream()
-        .map(ExternalCalendarAccountResponse::from)
+        .map(externalCalendarAccountMapper::toResponse)
         .toList();
   }
 

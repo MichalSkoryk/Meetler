@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 public class CalendarService {
 
   private final CalendarRepository calendarRepository;
+  private final CalendarMapper calendarMapper;
 
   public CalendarResponse createCalendar(CreateCalendarRequest request, AppUser user) {
     Calendar calendar =
@@ -32,11 +33,11 @@ public class CalendarService {
             .build();
 
     calendarRepository.save(calendar);
-    return toResponse(calendar);
+    return calendarMapper.toResponse(calendar);
   }
 
   public List<CalendarResponse> getUserCalendars(AppUser user) {
-    return calendarRepository.findByUser(user).stream().map(this::toResponse).toList();
+    return calendarRepository.findByUser(user).stream().map(calendarMapper::toResponse).toList();
   }
 
   public CalendarResponse updateCalendar(UUID id, UpdateCalendarRequest request, AppUser user) {
@@ -58,7 +59,7 @@ public class CalendarService {
     calendar.setUpdatedAt(OffsetDateTime.now());
     calendarRepository.save(calendar);
 
-    return toResponse(calendar);
+    return calendarMapper.toResponse(calendar);
   }
 
   public void deleteCalendar(UUID id, AppUser user) {
@@ -72,20 +73,5 @@ public class CalendarService {
     }
 
     calendarRepository.delete(calendar);
-  }
-
-  private CalendarResponse toResponse(Calendar calendar) {
-    return CalendarResponse.builder()
-        .id(calendar.getId())
-        .name(calendar.getName())
-        .provider(calendar.getProvider())
-        .externalId(calendar.getExternalId())
-        .color(calendar.getColor())
-        .isEditable(calendar.isEditable())
-        .isActive(calendar.isActive())
-        .syncDirection(calendar.getSyncDirection())
-        .createdAt(calendar.getCreatedAt())
-        .updatedAt(calendar.getUpdatedAt())
-        .build();
   }
 }
