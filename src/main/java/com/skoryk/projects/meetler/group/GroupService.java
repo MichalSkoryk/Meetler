@@ -35,6 +35,7 @@ public class GroupService {
   private final GroupEventRepository groupEventRepository;
   private final GroupEventParticipantRepository groupEventParticipantRepository;
   private final SubscriptionLimitService subscriptionLimitService;
+  private final GroupMapper groupMapper;
 
   public GroupResponse createGroup(CreateGroupRequest request, AppUser owner) {
 
@@ -148,7 +149,6 @@ public class GroupService {
       long memberCount,
       List<GroupEvent> upcomingEvents,
       Map<UUID, GroupEventParticipant> currentUserParticipants) {
-    Group group = membership.getGroup();
     List<GroupEvent> pendingEvents =
         upcomingEvents.stream()
             .filter(GroupEvent::isRequiresConfirmation)
@@ -160,38 +160,22 @@ public class GroupService {
                 })
             .toList();
 
-    return GroupResponse.builder()
-        .id(group.getId())
-        .name(group.getName())
-        .role(membership.getRole().name())
-        .memberCount(memberCount)
-        .hasAvailabilityTemplate(membership.getAvailabilityTemplate() != null)
-        .pendingResponseCount(pendingEvents.size())
-        .nextEvent(
-            upcomingEvents.isEmpty()
-                ? null
-                : toEventSummary(upcomingEvents.getFirst(), currentUserParticipants))
-        .nextPendingEvent(
-            pendingEvents.isEmpty()
-                ? null
-                : toEventSummary(pendingEvents.getFirst(), currentUserParticipants))
-        .eventRequiresConfirmation(group.isEventRequiresConfirmation())
-        .createdAt(group.getCreatedAt())
-        .updatedAt(group.getUpdatedAt())
-        .build();
+    GroupEvent nextEvent = upcomingEvents.isEmpty() ? null : upcomingEvents.getFirst();
+    GroupEvent nextPendingEvent = pendingEvents.isEmpty() ? null : pendingEvents.getFirst();
+
+    return groupMapper.toResponse(
+        membership,
+        memberCount,
+        pendingEvents.size(),
+        toEventSummary(nextEvent, currentUserParticipants),
+        toEventSummary(nextPendingEvent, currentUserParticipants));
   }
 
   private GroupEventSummaryResponse toEventSummary(
       GroupEvent event, Map<UUID, GroupEventParticipant> currentUserParticipants) {
-    GroupEventParticipant participant = currentUserParticipants.get(event.getId());
-    return GroupEventSummaryResponse.builder()
-        .id(event.getId())
-        .title(event.getTitle())
-        .startsAt(event.getStartsAt())
-        .endsAt(event.getEndsAt())
-        .status(event.getStatus().name())
-        .requiresConfirmation(event.isRequiresConfirmation())
-        .myResponseStatus(participant == null ? null : participant.getStatus().name())
-        .build();
+    if (event == null) {
+      return null;
+    }
+    return groupMapper.toEventSummary(event, currentUserParticipants.get(event.getId()));
   }
 }

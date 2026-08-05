@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserDeviceService {
 
   private final UserDeviceRepository userDeviceRepository;
+  private final UserDeviceMapper userDeviceMapper;
 
   @Transactional
   public UserDeviceResponse registerDevice(AppUser user, RegisterDeviceRequest request) {
@@ -35,7 +36,7 @@ public class UserDeviceService {
     device.setRevokedAt(null);
     device.setLastSeenAt(now);
 
-    return toResponse(userDeviceRepository.save(device));
+    return userDeviceMapper.toResponse(userDeviceRepository.save(device));
   }
 
   @Transactional
@@ -51,15 +52,5 @@ public class UserDeviceService {
     device.setEnabled(false);
     device.setRevokedAt(OffsetDateTime.now());
     userDeviceRepository.save(device);
-  }
-
-  private UserDeviceResponse toResponse(UserDevice device) {
-    return UserDeviceResponse.builder()
-        .id(device.getId())
-        .platform(device.getPlatform())
-        .provider(device.getProvider())
-        .enabled(device.isEnabled())
-        .lastSeenAt(device.getLastSeenAt())
-        .build();
   }
 }

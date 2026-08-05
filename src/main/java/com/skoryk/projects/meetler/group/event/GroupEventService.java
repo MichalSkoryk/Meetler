@@ -27,6 +27,7 @@ public class GroupEventService {
   private final GroupEventParticipantRepository participantRepository;
   private final GoogleGroupEventExportService googleGroupEventExportService;
   private final NotificationService notificationService;
+  private final GroupEventMapper groupEventMapper;
 
   @Transactional
   public GroupEventResponse createEvent(
@@ -229,31 +230,6 @@ public class GroupEventService {
   }
 
   private GroupEventResponse toResponse(GroupEvent event) {
-    return GroupEventResponse.builder()
-        .id(event.getId())
-        .groupId(event.getGroup().getId())
-        .createdByUserId(event.getCreatedBy().getId())
-        .title(event.getTitle())
-        .description(event.getDescription())
-        .startsAt(event.getStartsAt())
-        .endsAt(event.getEndsAt())
-        .status(event.getStatus().name())
-        .requiresConfirmation(event.isRequiresConfirmation())
-        .participants(
-            participantRepository.findByGroupEvent(event).stream()
-                .map(this::toParticipantResponse)
-                .toList())
-        .createdAt(event.getCreatedAt())
-        .updatedAt(event.getUpdatedAt())
-        .build();
-  }
-
-  private GroupEventParticipantResponse toParticipantResponse(GroupEventParticipant participant) {
-    return GroupEventParticipantResponse.builder()
-        .userId(participant.getUser().getId())
-        .userEmail(participant.getUser().getEmail())
-        .status(participant.getStatus().name())
-        .respondedAt(participant.getRespondedAt())
-        .build();
+    return groupEventMapper.toResponse(event, participantRepository.findByGroupEvent(event));
   }
 }

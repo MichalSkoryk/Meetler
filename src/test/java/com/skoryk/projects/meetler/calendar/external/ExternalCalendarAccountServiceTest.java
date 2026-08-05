@@ -17,8 +17,10 @@ import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mapstruct.factory.Mappers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
@@ -26,6 +28,10 @@ class ExternalCalendarAccountServiceTest {
 
   @Mock private ExternalCalendarAccountRepository accountRepository;
   @Mock private TokenEncryptionService tokenEncryptionService;
+
+  @Spy
+  private ExternalCalendarAccountMapper externalCalendarAccountMapper =
+      Mappers.getMapper(ExternalCalendarAccountMapper.class);
 
   @InjectMocks private ExternalCalendarAccountService service;
 

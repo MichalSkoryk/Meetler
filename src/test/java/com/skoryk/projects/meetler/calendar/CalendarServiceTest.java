@@ -17,14 +17,17 @@ import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mapstruct.factory.Mappers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 class CalendarServiceTest {
 
   @Mock private CalendarRepository calendarRepository;
+  @Spy private CalendarMapper calendarMapper = Mappers.getMapper(CalendarMapper.class);
 
   @InjectMocks private CalendarService service;
 

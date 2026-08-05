@@ -22,6 +22,7 @@ public class GroupInviteService {
   private final GroupInviteRepository inviteRepository;
   private final GroupMemberService memberService;
   private final GroupPermissionService groupPermissionService;
+  private final GroupInviteMapper groupInviteMapper;
 
   @Transactional
   public GroupInviteResponse createInvite(
@@ -49,7 +50,7 @@ public class GroupInviteService {
 
     GroupInvite savedInvite = inviteRepository.save(invite);
 
-    return toResponse(savedInvite);
+    return groupInviteMapper.toResponse(savedInvite);
   }
 
   @Transactional(readOnly = true)
@@ -66,7 +67,7 @@ public class GroupInviteService {
     OffsetDateTime now = OffsetDateTime.now();
     return inviteRepository.findByGroupOrderByCreatedAtDesc(group).stream()
         .filter(invite -> isActive(invite, now))
-        .map(this::toResponse)
+        .map(groupInviteMapper::toResponse)
         .toList();
   }
 
@@ -87,7 +88,7 @@ public class GroupInviteService {
       inviteRepository.save(invite);
     }
 
-    return toResponse(invite);
+    return groupInviteMapper.toResponse(invite);
   }
 
   @Transactional
@@ -138,18 +139,5 @@ public class GroupInviteService {
     boolean notExpired = invite.getExpiresAt() == null || invite.getExpiresAt().isAfter(now);
     boolean hasUsesLeft = invite.getMaxUses() == null || invite.getUses() < invite.getMaxUses();
     return notRevoked && notExpired && hasUsesLeft;
-  }
-
-  private GroupInviteResponse toResponse(GroupInvite invite) {
-    return GroupInviteResponse.builder()
-        .id(invite.getId())
-        .code(invite.getCode())
-        .expiresAt(invite.getExpiresAt())
-        .maxUses(invite.getMaxUses())
-        .uses(invite.getUses())
-        .createdAt(invite.getCreatedAt())
-        .revokedAt(invite.getRevokedAt())
-        .revokedByUserId(invite.getRevokedBy() == null ? null : invite.getRevokedBy().getId())
-        .build();
   }
 }

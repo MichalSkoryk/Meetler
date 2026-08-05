@@ -36,9 +36,11 @@ import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mapstruct.factory.Mappers;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -53,6 +55,10 @@ class AvailabilityTemplateServiceTest {
   @Mock private CalendarRepository calendarRepository;
   @Mock private AvailabilityTemplateResolver resolver;
   @Mock private SubscriptionLimitService subscriptionLimitService;
+
+  @Spy
+  private AvailabilityTemplateMapper availabilityTemplateMapper =
+      Mappers.getMapper(AvailabilityTemplateMapper.class);
 
   @InjectMocks private AvailabilityTemplateService service;
 

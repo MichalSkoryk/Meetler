@@ -21,14 +21,14 @@ public class MeService {
   private final BillingSynchronizationService billingSynchronizationService;
   private final ExternalCalendarAccountRepository externalCalendarAccountRepository;
   private final UserAuthIdentityRepository userAuthIdentityRepository;
+  private final MeMapper meMapper;
 
   public MeBootstrapResponse getBootstrap(AppUser user) {
-    return MeBootstrapResponse.builder()
-        .user(toUserResponse(user))
-        .subscription(getSubscriptionUsage(user))
-        .connectedCalendars(getConnectedCalendars(user))
-        .connectedLoginMethods(getConnectedLoginMethods(user))
-        .build();
+    return meMapper.toBootstrapResponse(
+        meMapper.toUserResponse(user),
+        getSubscriptionUsage(user),
+        getConnectedCalendars(user),
+        getConnectedLoginMethods(user));
   }
 
   public SubscriptionUsageResponse getSubscriptionUsage(AppUser user) {
@@ -40,21 +40,9 @@ public class MeService {
     return subscriptionUsageService.getUsage(user);
   }
 
-  private MeUserResponse toUserResponse(AppUser user) {
-    return MeUserResponse.builder()
-        .id(user.getId())
-        .email(user.getEmail())
-        .name(user.getName())
-        .role(user.getRole())
-        .hasPassword(user.getPasswordHash() != null && !user.getPasswordHash().isBlank())
-        .build();
-  }
-
   private ConnectedCalendarsResponse getConnectedCalendars(AppUser user) {
-    return ConnectedCalendarsResponse.builder()
-        .google(hasProvider(user, CalendarProvider.GOOGLE))
-        .microsoft(hasProvider(user, CalendarProvider.TEAMS))
-        .build();
+    return meMapper.toConnectedCalendarsResponse(
+        hasProvider(user, CalendarProvider.GOOGLE), hasProvider(user, CalendarProvider.TEAMS));
   }
 
   private ConnectedLoginMethodsResponse getConnectedLoginMethods(AppUser user) {
@@ -63,11 +51,10 @@ public class MeService {
             .map(identity -> identity.getProvider())
             .collect(Collectors.toSet());
 
-    return ConnectedLoginMethodsResponse.builder()
-        .password(providers.contains(AuthProvider.INTERNAL))
-        .google(providers.contains(AuthProvider.GOOGLE))
-        .microsoft(providers.contains(AuthProvider.MICROSOFT))
-        .build();
+    return meMapper.toConnectedLoginMethodsResponse(
+        providers.contains(AuthProvider.INTERNAL),
+        providers.contains(AuthProvider.GOOGLE),
+        providers.contains(AuthProvider.MICROSOFT));
   }
 
   private boolean hasProvider(AppUser user, CalendarProvider provider) {

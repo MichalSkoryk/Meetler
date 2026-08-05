@@ -53,6 +53,7 @@ public class GoogleGroupEventExportService {
   private final CalendarRepository calendarRepository;
   private final GroupEventExternalSyncRepository syncRepository;
   private final GoogleCalendarTokenService tokenService;
+  private final GroupEventExternalSyncMapper syncMapper;
   private final RestClient restClient = RestClient.create();
 
   @Transactional
@@ -115,7 +116,7 @@ public class GoogleGroupEventExportService {
     sync.setStatus(GroupEventExternalSyncStatus.SYNCED);
     sync.setLastSyncedAt(now);
     sync.setLastError(null);
-    return toResponse(syncRepository.save(sync));
+    return syncMapper.toResponse(syncRepository.save(sync));
   }
 
   @Transactional
@@ -418,18 +419,6 @@ public class GoogleGroupEventExportService {
     response.setSummary(summary);
     response.setBackgroundColor(color);
     return response;
-  }
-
-  private ExportGroupEventResponse toResponse(GroupEventExternalSync sync) {
-    return ExportGroupEventResponse.builder()
-        .groupEventId(sync.getGroupEvent().getId())
-        .externalCalendarAccountId(sync.getExternalCalendarAccount().getId())
-        .provider(sync.getProvider().name())
-        .externalCalendarId(sync.getExternalCalendarId())
-        .externalEventId(sync.getExternalEventId())
-        .status(sync.getStatus().name())
-        .lastSyncedAt(sync.getLastSyncedAt())
-        .build();
   }
 
   private String truncateError(String message) {
