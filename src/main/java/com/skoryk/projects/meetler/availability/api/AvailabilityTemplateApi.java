@@ -42,7 +42,8 @@ public interface AvailabilityTemplateApi {
   @Operation(
       summary = "Create an availability template",
       description =
-          "Creates a reusable availability template for the authenticated user. "
+          "Creates a reusable availability template for the authenticated user. The user's first "
+              + "template is always made the default. "
               + "If isDefault is true, the user's previous default template is cleared. "
               + "defaultAvailabilityStatus controls whether empty space is AVAILABLE or BUSY.")
   @PostMapping

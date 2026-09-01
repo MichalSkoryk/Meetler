@@ -44,12 +44,14 @@ public class AvailabilityTemplateService {
   @Transactional
   public AvailabilityTemplateResponse createTemplate(
       AppUser user, CreateAvailabilityTemplateRequest request) {
-    validateGuestTemplateLimit(user);
+    boolean hasTemplates = templateRepository.existsByUser(user);
+    validateGuestTemplateLimit(user, hasTemplates);
     subscriptionLimitService.assertCanCreateAvailabilityTemplate(user);
     validateTimezone(request.getTimezone());
     validateDefaultAvailabilityStatus(request.getDefaultAvailabilityStatus());
 
-    if (request.isDefault()) {
+    boolean shouldBeDefault = request.isDefault() || !hasTemplates;
+    if (shouldBeDefault) {
       templateRepository.clearDefaultForUser(user);
     }
 
@@ -58,7 +60,7 @@ public class AvailabilityTemplateService {
             .user(user)
             .name(request.getName())
             .timezone(request.getTimezone())
-            .isDefault(request.isDefault())
+            .isDefault(shouldBeDefault)
             .defaultAvailabilityStatus(
                 defaultAvailabilityStatusOrFallback(request.getDefaultAvailabilityStatus()))
             .build();
@@ -345,8 +347,8 @@ public class AvailabilityTemplateService {
         .orElseThrow(() -> new IllegalArgumentException("Availability template not found"));
   }
 
-  private void validateGuestTemplateLimit(AppUser user) {
-    if (user.getRole() == AppUserRole.GUEST && templateRepository.existsByUser(user)) {
+  private void validateGuestTemplateLimit(AppUser user, boolean hasTemplates) {
+    if (user.getRole() == AppUserRole.GUEST && hasTemplates) {
       throw new IllegalStateException("Guest accounts can create only one availability template");
     }
   }

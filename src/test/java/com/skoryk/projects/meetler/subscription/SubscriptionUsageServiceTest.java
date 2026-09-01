@@ -19,6 +19,7 @@ import com.skoryk.projects.meetler.subscription.billing.BillingProperties;
 import com.skoryk.projects.meetler.user.AppUser;
 import com.skoryk.projects.meetler.user.AppUserRole;
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -141,6 +142,24 @@ class SubscriptionUsageServiceTest {
     assertThat(service.activePlanFor(user)).isSameAs(free);
   }
 
+  @Test
+  void activePlanKeepsProWhenPlusAndProEntitlementsAreBothActive() {
+    AppUser user = user();
+    SubscriptionPlan pro = plan("PRO", 25, 25);
+    when(userSubscriptionRepository.findFirstByUserAndStatusOrderByStartedAtDesc(
+            user, SubscriptionStatus.ACTIVE))
+        .thenReturn(Optional.empty());
+    when(billingProperties.getMode()).thenReturn(BillingMode.SANDBOX);
+    when(billingEntitlementRepository.findByCustomerUser(user))
+        .thenReturn(
+            List.of(
+                activeEntitlement("PLUS", BillingEnvironment.SANDBOX),
+                activeEntitlement("PRO", BillingEnvironment.SANDBOX)));
+    when(planRepository.findByCodeAndActiveTrue("PRO")).thenReturn(Optional.of(pro));
+
+    assertThat(service.activePlanFor(user)).isSameAs(pro);
+  }
+
   private void activePlan(AppUser user, SubscriptionPlan plan) {
     when(userSubscriptionRepository.findFirstByUserAndStatusOrderByStartedAtDesc(
             user, SubscriptionStatus.ACTIVE))
@@ -165,6 +184,15 @@ class SubscriptionUsageServiceTest {
         .maxOwnedGroups(maxOwnedGroups)
         .maxAvailabilityTemplates(maxAvailabilityTemplates)
         .active(true)
+        .build();
+  }
+
+  private BillingEntitlement activeEntitlement(String planCode, BillingEnvironment environment) {
+    return BillingEntitlement.builder()
+        .planCode(planCode)
+        .environment(environment)
+        .status(BillingEntitlementStatus.ACTIVE)
+        .expiresAt(OffsetDateTime.now().plusDays(1))
         .build();
   }
 

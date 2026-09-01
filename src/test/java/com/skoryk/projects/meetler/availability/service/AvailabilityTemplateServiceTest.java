@@ -93,6 +93,49 @@ class AvailabilityTemplateServiceTest {
   }
 
   @Test
+  void createTemplateMakesFirstTemplateDefault() {
+    AppUser user = user();
+    CreateAvailabilityTemplateRequest request = createTemplateRequest();
+    request.setDefault(false);
+    when(templateRepository.existsByUser(user)).thenReturn(false);
+    when(templateRepository.save(any(AvailabilityTemplate.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+
+    AvailabilityTemplateResponse response = service.createTemplate(user, request);
+
+    assertThat(response.isDefault()).isTrue();
+    verify(templateRepository).clearDefaultForUser(user);
+  }
+
+  @Test
+  void createTemplateKeepsLaterTemplateNonDefaultWhenRequested() {
+    AppUser user = user();
+    CreateAvailabilityTemplateRequest request = createTemplateRequest();
+    request.setDefault(false);
+    when(templateRepository.existsByUser(user)).thenReturn(true);
+    when(templateRepository.save(any(AvailabilityTemplate.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+
+    AvailabilityTemplateResponse response = service.createTemplate(user, request);
+
+    assertThat(response.isDefault()).isFalse();
+    verify(templateRepository, never()).clearDefaultForUser(user);
+  }
+
+  @Test
+  void deleteTemplateAllowsDeletingDefaultTemplate() {
+    AppUser user = user();
+    AvailabilityTemplate template = template(user);
+    template.setDefault(true);
+    when(templateRepository.findByIdAndUser(template.getId(), user))
+        .thenReturn(Optional.of(template));
+
+    service.deleteTemplate(template.getId(), user);
+
+    verify(templateRepository).delete(template);
+  }
+
+  @Test
   void createTemplateRejectsInvalidTimezone() {
     CreateAvailabilityTemplateRequest request = createTemplateRequest();
     request.setTimezone("not/a-zone");
